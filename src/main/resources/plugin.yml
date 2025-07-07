@@ -1,0 +1,25 @@
+name: CatsAndMice
+version: '1.0-SNAPSHOT'
+main: fr.loot1.catsAndMice.CatsAndMice
+api-version: '1.20.6'
+authors: [ Loot1 ]
+description: Cats And Mice minigame
+depend:
+  - DecentHolograms
+permissions:
+  catsandmice.*:
+    description: Allows all permissions of Cats And Mice plugin
+    default: op
+    children:
+      catsandmice.cat: true
+      catsandmice.use: true
+      catsandmice.reload: true
+  catsandmice.cat:
+    description: Allows to reset the game
+    default: op
+  catsandmice.use:
+    description: Allows to play the game
+    default: op
+  catsandmice.reload:
+    description: Allows to reload configuration
+    default: op

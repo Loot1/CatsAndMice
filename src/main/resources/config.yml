@@ -1,0 +1,23 @@
+messages:
+  errors:
+    permission-denied: '&cVous n''avez pas la permission.'
+    console-sender: '&cCette commande n''est pas utilisable depuis la console.'
+
+settings:
+  game-lines: 10
+
+hologram:
+  header:
+    - "&c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo"
+    - ""
+    - "&7Défies les modos en faisant augmenter le score"
+    - "&7Mais attention, car s''ils passent par là, tout est fini !"
+  footer: []
+  # %hour% -> Hour
+  # %player% -> Player name
+  # %score% -> Score
+  add-score: "&d%hour% &7| &6%player%&7 monte à &b%score&7 !"
+  # %hour% -> Hour
+  # %rank% -> Rank
+  # %player% -> Player name
+  reset-score: "&d%hour% &7| &6%rank%%player%&7 a réinitialisé !"
