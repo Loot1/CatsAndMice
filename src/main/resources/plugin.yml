@@ -1,25 +1,32 @@
-name: CatsAndMice
-version: '1.0-SNAPSHOT'
-main: fr.loot1.catsAndMice.CatsAndMice
+name: ClickGame
+version: '1.0.0'
+main: fr.Eniox59.clickgame.ClickGame
 api-version: '1.20.6'
-authors: [ Loot1 ]
-description: Cats And Mice minigame
+authors: [ Eniox59 ]
+description: Un jeu de clics avec classement et meilleur score
 depend:
   - DecentHolograms
+
+commands:
+  clickgame:
+    description: Commandes du jeu de clics
+    usage: /clickgame <create|reload>
+    permission: clickgame.command
+
 permissions:
-  catsandmice.*:
-    description: Allows all permissions of Cats And Mice plugin
-    default: op
+  clickgame.*:
+    description: Accès à toutes les fonctionnalités du plugin (Admin)
+    default: false
     children:
-      catsandmice.cat: true
-      catsandmice.use: true
-      catsandmice.reload: true
-  catsandmice.cat:
-    description: Allows to reset the game
-    default: op
-  catsandmice.use:
-    description: Allows to play the game
-    default: op
-  catsandmice.reload:
-    description: Allows to reload configuration
+      clickgame.command: true
+      clickgame.bypass: true
+      clickgame.reset: true
+  clickgame.command:
+    description: Permet d'utiliser les commandes /clickgame create et /clickgame reload
+    default: false
+  clickgame.bypass:
+    description: Permet de contourner le délai entre les clics
+    default: false
+  clickgame.reset:
+    description: Permet de réinitialiser le score en cliquant sur l'hologramme
     default: op

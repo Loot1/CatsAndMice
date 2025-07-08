@@ -1,23 +1,108 @@
+# Messages du plugin
 messages:
   errors:
     permission-denied: '&cVous n''avez pas la permission.'
     console-sender: '&cCette commande n''est pas utilisable depuis la console.'
+    no-permission: '&cVous n''avez pas la permission de faire cela !'
+    
+  success:
+    score-reset: '&aLe score a été réinitialisé ! Dernier meilleur score : &e%best_score% &apar &6%best_player%'
+    config-reloaded: '&aConfiguration rechargée avec succès !'
+    hologram-created: '&aHologramme créé avec succès !'
+    click-registered: '&a+1 point ! Score actuel : &e%current_score%'
+    new-best-score: '&6&lNouveau meilleur score : &e%score% &6par &a%player%&6!'
 
+# Paramètres du jeu
 settings:
+  # Nombre de lignes à afficher dans l'hologramme
   game-lines: 10
+  
+  # Délai entre chaque clic en secondes (5 minutes par défaut)
+  click-delay: 300
+  
+  # Message lorsque le meilleur score est battu
+  new-best-score: '&6Nouveau meilleur score : %score% !'
+  
+  # Message lorsque le joueur doit attendre avant de pouvoir cliquer à nouveau
+  wait-message: '§6Veuillez patienter §e%time% §6secondes avant de pouvoir cliquer à nouveau.'
+  
+  # Format de l'heure (pour les messages)
+  time-format: 'HH:mm:ss'
+  
+  # Logs
+  debug:
+    # Afficher les logs détaillés pour chaque clic (désactivé par défaut)
+    log-clicks: false
+    # Afficher les logs de mise à jour de l'hologramme (désactivé par défaut)
+    log-hologram-update: false
+    # Afficher les logs des records(le meilleur de tous s'affichent dans le tchat de tout le monde) (désactivé par défaut)
+    log-records: false
+    
+  # Ancienne section d'alerte de score (désactivée car maintenant gérée par le webhook)
 
+# Configuration de l'hologramme
 hologram:
+  # Nom de l'hologramme (doit correspondre au nom dans le code)
+  name: 'clickgame_hologram'
+  
+  # Position par défaut (sera mise à jour lors de la création et n'apparait pas sans la commande - /clickgame create )
+  location:
+    world: 'world'
+    x: 0
+    y: 100
+    z: 0
+  
+  # En-tête de l'hologramme
   header:
-    - "&c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo"
-    - ""
-    - "&7Défies les modos en faisant augmenter le score"
-    - "&7Mais attention, car s''ils passent par là, tout est fini !"
-  footer: []
-  # %hour% -> Hour
-  # %player% -> Player name
-  # %score% -> Score
-  add-score: "&d%hour% &7| &6%player%&7 monte à &b%score&7 !"
-  # %hour% -> Hour
-  # %rank% -> Rank
-  # %player% -> Player name
-  reset-score: "&d%hour% &7| &6%rank%%player%&7 a réinitialisé !"
+    - '&6&lCLICK GAME'
+    - '&8&m--------------------'
+  
+  # Bouton cliquable
+  button:
+    - '&e&l[CLIQUEZ ICI]'
+    - '&7pour jouer ou réinitialiser'
+    - '&8&m--------------------'
+    
+  # Style de l'hologramme
+  style:
+    # Activer les couleurs personnalisées
+    use-custom-colors: true
+    # Couleur du texte principal
+    text-color: '&f'
+    # Couleur des scores
+    score-color: '&e'
+    # Couleur du meilleur score
+    best-score-color: '&6&l'
+  
+  content:
+    - '&eScore actuel: &a%current_score%'
+    - '&6Meilleur score: &a%best_score% &7(par &6%best_player%&7)'
+    - '&8&m--------------------'
+  
+  # Messages d'événements
+  messages:
+    add-score: '&d%time% &7| &6%player%&7 a cliqué ! (&b%score%&7)'
+    reset-score: '&d%time% &7| &c%player% &7a réinitialisé le score ! (Dernier meilleur: &a%best_score% &7par &6%best_player%&7)'
+
+# Configuration du webhook Discord
+webhook:
+  # Activer/désactiver les notifications Discord
+  enabled: false
+  # URL du webhook Discord
+  url: 'https://discord.com/api/webhooks/votre_webhook_ici'
+  # Seuil à partir duquel envoyer une alerte
+  threshold: 100
+  # Mentions à ajouter avant le message (ex: @everyone, @here, ou ID de rôle <@&ROLE_ID>)
+  # Laisser vide pour ne pas mentionner
+  mention: ''
+  # Activer/désactiver les mentions (true/false)
+  mention-enabled: false
+  # Message d'alerte (utilise %player% et %score% comme placeholders)
+  alert-message: |-
+    **🎮 CLICKGAME - 1-2-3-Modo**
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ⏰***Alerte score élevé***
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    🏆 **Joueur:** %player%
+    ⚡ **Score atteint:** %score%
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━

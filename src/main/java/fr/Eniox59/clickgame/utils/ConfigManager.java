@@ -1,29 +1,29 @@
-package fr.loot1.catsAndMice.utils;
+package fr.Eniox59.clickgame.utils;
 
 import java.io.File;
 import java.util.List;
 
-import fr.loot1.catsAndMice.CatsAndMice;
+import fr.Eniox59.clickgame.ClickGame;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class ConfigManager {
 
-    private final CatsAndMice main;
+    private final ClickGame plugin;
     private final File configFile;
     private final FileConfiguration config;
 
-    public ConfigManager(CatsAndMice catsAndMice) {
-        this.main = catsAndMice;
-        this.configFile = new File(catsAndMice.getDataFolder(), "config.yml");
-        this.config = catsAndMice.getConfig();
+    public ConfigManager(ClickGame plugin) {
+        this.plugin = plugin;
+        this.configFile = new File(plugin.getDataFolder(), "config.yml");
+        this.config = plugin.getConfig();
         init();
     }
 
     private void create() {
-        main.saveDefaultConfig();
-        main.getLogger().info("Configuration file added");
+        plugin.saveDefaultConfig();
+        plugin.getLogger().info("Configuration file added");
     }
 
     public void init() {
@@ -34,18 +34,18 @@ public class ConfigManager {
 
     public void reload() {
         if(configFile.exists()) {
-            main.getLogger().info("Configuration file reloaded");
+            plugin.getLogger().info("Configuration file reloaded");
         } else {
             create();
         }
-        main.reloadConfig();
+        plugin.reloadConfig();
     }
 
     public Location getLocation(final String path) {
         if(this.config.contains(path)) {
             return this.config.getLocation(path);
         }
-        main.getLogger().severe("This value doesn't exist in configuration file :" + path);
+        plugin.getLogger().severe("This value doesn't exist in configuration file :" + path);
         return null;
     }
 
@@ -55,7 +55,7 @@ public class ConfigManager {
             messages.replaceAll(msgToColor -> ChatColor.translateAlternateColorCodes('&', msgToColor));
             return messages;
         }
-        main.getLogger().severe("This value doesn't exist in configuration file :" + path);
+        plugin.getLogger().severe("This value doesn't exist in configuration file :" + path);
         return null;
     }
 
@@ -63,7 +63,7 @@ public class ConfigManager {
         if(this.config.contains(path)) {
             return ChatColor.translateAlternateColorCodes('&', this.config.getString(path));
         }
-        main.getLogger().severe("This value doesn't exist in configuration file :" + path);
+        plugin.getLogger().severe("This value doesn't exist in configuration file :" + path);
         return "";
     }
 
@@ -71,7 +71,7 @@ public class ConfigManager {
         if(this.config.contains(path)) {
             return this.config.getBoolean(path);
         }
-        main.getLogger().severe("This value doesn't exist in configuration file :" + path);
+        plugin.getLogger().severe("This value doesn't exist in configuration file :" + path);
         return false;
     }
 
@@ -83,8 +83,12 @@ public class ConfigManager {
         if(this.config.contains(path)) {
             return this.config.getString(path);
         }
-        main.getLogger().severe("This value doesn't exist in configuration file :" + path);
+        plugin.getLogger().severe("This value doesn't exist in configuration file :" + path);
         return null;
     }
 
+    public void set(String path, Object value) {
+        plugin.getConfig().set(path, value);
+        plugin.saveConfig();
+    }
 }

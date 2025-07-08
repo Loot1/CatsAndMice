@@ -1,4 +1,4 @@
-package fr.loot1.catsAndMice.utils;
+package fr.Eniox59.clickgame.utils;
 
 public class HologramManager {
 

@@ -1,3 +1,2 @@
-games:
-  catsandmice:
-    current-score: 0
+# Meilleur score du jeu
+best-score: 0
