@@ -1,17 +1,19 @@
 # ClickGame - Plugin Minecraft
 
-Un plugin Minecraft interactif avec un système de score basé sur des clics. Les joueurs peuvent augmenter leur score en cliquant sur l'hologramme avec un délai entre chaque clic. Les administrateurs peuvent contourner ce délai. Le plugin inclut également des notifications Discord via webhook pour les événements importants.
+Un plugin Minecraft interactif avec un système de score basé sur des clics. Les joueurs peuvent augmenter leur score en cliquant sur l'hologramme avec un délai entre chaque clic. Les administrateurs peuvent contourner ce délai ou réinitialiser le score. Le plugin inclut également des notifications Discord via webhook pour les événements importants.
 
 ## Fonctionnalités
 
 - Système de score interactif avec hologramme cliquable
 - Meilleur score enregistré automatiquement avec le nom du joueur
 - Délai configurable entre chaque clic (5 minutes par défaut)
-- Possibilité de contourner le délai avec une permission
-- Gestion facile au niveaux des permissions
+- Possibilité de contourner le délai avec la permission `clickgame.bypass`
+- Réinitialisation du score possible avec la permission `clickgame.reset`
+- Gestion facile au niveau des permissions
 - Sauvegarde automatique des données dans `data.yml`
-- Notifications Discord via webhook pour les événements importants
+- Notifications Discord via webhook pour les scores élevés
 - Mentions personnalisables dans les notifications Discord
+- Système de logs détaillés pour le débogage
 
 ## Commandes
 
@@ -45,7 +47,11 @@ Configuration des messages et des paramètres du jeu :
 - `settings.wait-message` : Message affiché lorsqu'un joueur doit attendre avant de pouvoir cliquer à nouveau
 - `settings.new-best-score` : Message affiché lorsqu'un nouveau meilleur score est atteint
 - `settings.time-format` : Format de l'heure affichée dans les messages
-- `settings.debug.log-records` : Active les logs détaillés pour le débogage (par défaut: false)
+
+#### Paramètres de débogage
+- `settings.debug.log-clicks` : Active les logs des clics (par défaut: false)
+- `settings.debug.log-records` : Active les logs des records (par défaut: false)
+- `settings.debug.log-hologram-update` : Active les logs des mises à jour d'hologramme (par défaut: false)
 
 #### Configuration des webhooks Discord
 - `webhook.enabled` : Active ou désactive les notifications Discord (par défaut: false)
@@ -58,20 +64,48 @@ Configuration des messages et des paramètres du jeu :
 ### data.yml
 Sauvegarde des scores et du meilleur joueur.
 
+## Optimisation
+
+### Configuration recommandée pour de meilleures performances
+
+#### Paramètres de débogage
+- `log-clicks`: Désactivez en production (`false`) pour réduire l'utilisation du CPU
+- `log-records`: Activez uniquement si nécessaire pour le débogage
+- `log-hologram-update`: Désactivez en production pour réduire la charge serveur
+
+#### Optimisation des webhooks
+- Évitez d'utiliser `@everyone` dans les mentions si vous avez beaucoup de membres
+- Augmentez le seuil (`webhook.threshold`) pour réduire le nombre de notifications
+- Désactivez les webhooks si non nécessaires
+
+#### Gestion de la mémoire
+- Le plugin utilise un cache pour les messages fréquemment utilisés
+- Les données sont sauvegardées de manière asynchrone pour éviter les ralentissements
+- Les tâches planifiées sont optimisées pour minimiser l'impact sur les performances
+
+#### Recommandations pour les serveurs chargés
+1. Augmentez le `click-delay` si nécessaire (par exemple à 10 minutes)
+2. Désactivez les animations inutiles dans la configuration
+3. Limitez les logs au strict nécessaire
+4. Utilisez un serveur dédié pour les webhooks si vous avez beaucoup de trafic
+
 ## Configuration des Webhooks Discord
 
 ### Création d'un webhook Discord
 
 1. **Créer un webhook** :
-   - Allez dans les paramètres de votre serveur Discord
+   - Allez dans les paramètres de votre salon Discord (icône d'engrenage)
    - Sélectionnez "Intégrations" puis "Créer un webhook"
+   - Personnalisez le nom et l'avatar du webhook si nécessaire
    - Copiez l'URL du webhook généré
 
 2. **Configuration du plugin** :
    - Ouvrez le fichier `config.yml`
    - Activez les webhooks : `webhook.enabled: true`
    - Collez votre URL de webhook : `webhook.url: 'https://discord.com/api/webhooks/...'`
-   - Personnalisez les autres paramètres selon vos besoins
+   - Définissez le seuil de score pour les alertes : `webhook.threshold: 100`
+   - Activez les mentions si nécessaire : `webhook.mention-enabled: true`
+   - Définissez la mention : `webhook.mention: '@everyone'`
 
 ### Exemple de configuration complète
 
@@ -97,6 +131,8 @@ webhook:
 - `%player%` : Nom du joueur
 - `%score%` : Score atteint
 - `%date%` : Date et heure actuelles (format configuré dans `settings.time-format`)
+- `%best-score%` : Meilleur score actuel
+- `%best-player%` : Nom du meilleur joueur
 
 ## Dépendances
 
