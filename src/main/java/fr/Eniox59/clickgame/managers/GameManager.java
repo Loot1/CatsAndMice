@@ -4,27 +4,21 @@ import com.google.gson.JsonObject;
 import fr.Eniox59.clickgame.ClickGame;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.Location;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.io.File;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 
@@ -36,28 +30,129 @@ public class GameManager {
     private String bestPlayerName;
     private final Map<UUID, Integer> playerClicks;
     private final Map<UUID, Long> lastClickTimes;
+    private final Map<String, String> cachedMessages;
     private File dataFile;
     private FileConfiguration dataConfig;
+    private final ExecutorService threadPool;
+    private long lastHologramUpdate = 0;
+    
+    /**
+     * Charge les données du jeu depuis le fichier de données
+     */
+    private void loadData() {
+        // Initialiser le fichier de données
+        dataFile = new File(plugin.getDataFolder(), "data.yml");
+        dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+        
+        // Charger les données
+        bestScore = dataConfig.getInt("best-score", 0);
+        bestPlayerName = dataConfig.getString("best-player", null);
+        
+        // Charger les clics des joueurs
+        ConfigurationSection playerClicksSection = dataConfig.getConfigurationSection("player-clicks");
+        if (playerClicksSection != null) {
+            for (String uuidStr : playerClicksSection.getKeys(false)) {
+                try {
+                    UUID uuid = UUID.fromString(uuidStr);
+                    int clicks = playerClicksSection.getInt(uuidStr);
+                    playerClicks.put(uuid, clicks);
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("UUID invalide dans les données des clics: " + uuidStr);
+                }
+            }
+        }
+        
+        // Charger les derniers temps de clic
+        ConfigurationSection lastClickTimesSection = dataConfig.getConfigurationSection("last-click-times");
+        if (lastClickTimesSection != null) {
+            for (String uuidStr : lastClickTimesSection.getKeys(false)) {
+                try {
+                    UUID uuid = UUID.fromString(uuidStr);
+                    long lastClickTime = lastClickTimesSection.getLong(uuidStr);
+                    lastClickTimes.put(uuid, lastClickTime);
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("UUID invalide dans les temps de clic: " + uuidStr);
+                }
+            }
+        }
+        
+        if (plugin.getConfig().getBoolean("settings.debug.log-load", false)) {
+            plugin.getLogger().info("Données chargées - Meilleur score: " + bestScore + 
+                               " par " + (bestPlayerName != null ? bestPlayerName : "Personne"));
+        }
+    }
     
     public GameManager(ClickGame plugin) {
         this.plugin = plugin;
         this.playerClicks = new HashMap<>();
         this.lastClickTimes = new HashMap<>();
+        this.cachedMessages = new HashMap<>();
         this.currentScore = 0;
+        
+        // Initialisation du pool de threads si activé
+        if (plugin.getConfig().getBoolean("optimization.enable-thread-pool", true)) {
+            int poolSize = plugin.getConfig().getInt("optimization.max-thread-pool-size", 10);
+            this.threadPool = Executors.newFixedThreadPool(poolSize);
+            plugin.getLogger().info("Thread pool initialized with " + poolSize + " threads");
+        } else {
+            this.threadPool = null;
+        }
         
         // Chargement de la configuration
         loadData();
         
+        // Charger les messages en cache si activé
+        if (plugin.getConfig().getBoolean("optimization.enable-message-caching", true)) {
+            loadMessages();
+        }
+        
         // Charger la position de l'hologramme si elle existe
         loadHologramLocation();
         
-        // Initialisation des composants
+        // Planifier le nettoyage de la mémoire si activé
+        if (plugin.getConfig().getBoolean("optimization.enable-memory-cleanup", false)) {
+            scheduleMemoryCleanup();
+        }
+    }
+    
+    /**
+     * Vérifie si un joueur peut cliquer sur l'hologramme
+     * @param player Le joueur qui tente de cliquer
+     * @return true si le joueur peut cliquer, false sinon
+     */
+    private boolean canClick(Player player) {
+        if (player == null) return false;
+        
+        // Vérifier si le joueur a la permission de contourner le délai
+        if (player.hasPermission("clickgame.bypass")) {
+            return true;
+        }
+        
+        // Vérifier le délai entre les clics
+        UUID playerId = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+        long lastClickTime = lastClickTimes.getOrDefault(playerId, 0L);
+        // Convertir les secondes en millisecondes (1 seconde = 1000 ms)
+        long clickDelay = plugin.getConfig().getLong("settings.click-delay", 1) * 1000L; // Délai par défaut de 1 seconde
+        
+        if (currentTime - lastClickTime < clickDelay) {
+            // Le joueur doit encore attendre
+            long timeLeft = (clickDelay - (currentTime - lastClickTime)) / 1000; // Convertir en secondes
+            if (timeLeft > 0) {
+                player.sendMessage(String.format("§cVous devez attendre encore %d secondes avant de pouvoir cliquer à nouveau !", timeLeft));
+            } else {
+                player.sendMessage("§cVeuillez patienter avant de cliquer à nouveau !");
+            }
+            return false;
+        }
+        
+        return true;
     }
     
     public void handleHologramClick(Player player) {
         try {
-            // Vérifier si le joueur a la permission de réinitialiser
-            if (player.hasPermission("clickgame.reset") && player.isSneaking()) {
+            // Vérifier si le joueur a la permission de réinitialiser le score
+            if (player.hasPermission("clickgame.reset")) {
                 if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
                     plugin.getLogger().info(String.format("[DEBUG] %s a demandé une réinitialisation du score", player.getName()));
                 }
@@ -67,18 +162,15 @@ public class GameManager {
             
             // Vérifier si le joueur doit attendre avant de cliquer à nouveau
             if (!canClick(player)) {
-                if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
-                    plugin.getLogger().info(String.format("[DEBUG] %s doit attendre avant de pouvoir cliquer à nouveau", player.getName()));
-                }
                 return;
             }
+            
+            // Mettre à jour le temps du dernier clic avant d'ajouter le point
+            lastClickTimes.put(player.getUniqueId(), System.currentTimeMillis());
             
             // Ajouter un point
             addClick(player);
             player.sendMessage("§a+1 point ! Score actuel : §e" + currentScore);
-            
-            // Mettre à jour le temps du dernier clic
-            lastClickTimes.put(player.getUniqueId(), System.currentTimeMillis());
             
             // Log du clic si le mode debug est activé
             if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
@@ -209,9 +301,14 @@ public class GameManager {
                 final String finalMessage = message;
                 new Thread(() -> sendDiscordWebhook(webhookUrl, finalMessage)).start();
                 
-                // Log dans la console
-                plugin.getLogger().info(String.format("Alerte de score envoyée via webhook: %s a atteint %d points", 
-                    player.getName(), currentScore));
+                // Log dans la console et dans les logs d'hologramme
+                String logMessage = String.format("Alerte de score envoyee via webhook: %s a atteint %d points", 
+                    player.getName(), currentScore);
+                plugin.getLogger().info(logMessage);
+                
+                if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+                    plugin.getLogger().info("[HOLOGRAM] " + logMessage);
+                }
             }
         } catch (Exception e) {
             plugin.getLogger().severe("Erreur lors de l'envoi de l'alerte de score: " + e.getMessage());
@@ -221,6 +318,10 @@ public class GameManager {
         }
     }
     
+    /**
+     * Réinitialise le score actuel du jeu
+     * @param player Le joueur qui demande la réinitialisation (peut être null pour la console)
+     */
     public void resetScore(Player player) {
         try {
             // Vérifier la permission
@@ -246,10 +347,10 @@ public class GameManager {
                 player.sendMessage("§aLe score a été réinitialisé !");
             }
             
-            // Log de la reinitialisation
+            // Log de la réinitialisation
             if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
                 plugin.getLogger().info(String.format(
-                    "[SCORE] %s a reinitialise le score (Ancien meilleur: %d par %s)", 
+                    "[SCORE] %s a réinitialisé le score (Ancien meilleur: %d par %s)", 
                     player != null ? player.getName() : "Console",
                     previousBest,
                     previousBestPlayer != null ? previousBestPlayer : "Personne"
@@ -258,237 +359,22 @@ public class GameManager {
             
         } catch (Exception e) {
             plugin.getLogger().severe("Erreur lors de la réinitialisation du score: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Vérifie si un joueur peut cliquer à nouveau
-     * @param player Le joueur à vérifier
-     * @return true si le joueur peut cliquer, false sinon
-     */
-    private boolean canClick(Player player) {
-        // Seuls les joueurs avec la permission clickgame.bypass spécifique n'ont pas de délai
-        // Les opérateurs n'ont plus de bypass automatique
-        if (player.hasPermission("clickgame.bypass")) {
-            return true;
-        }
-        
-        UUID playerId = player.getUniqueId();
-        long currentTime = System.currentTimeMillis();
-        long lastClick = lastClickTimes.getOrDefault(playerId, 0L);
-        long clickDelay = plugin.getConfig().getLong("settings.click-delay", 300) * 1000; // en millisecondes
-        
-        // Vérifier si le délai est écoulé
-        if (currentTime - lastClick < clickDelay) {
-            long remainingTime = ((lastClick + clickDelay) - currentTime) / 1000; // en secondes
-            String waitMessage = plugin.getConfig().getString("settings.wait-message", "§6Veuillez patienter §e%time% §6secondes avant de pouvoir cliquer à nouveau.")
-                    .replace("%time%", String.valueOf(remainingTime));
-            player.sendMessage(waitMessage);
-            return false;
-        }
-        
-        return true;
-    }
-    
-    public void updateHologram() {
-        try {
-            // Récupérer le nom de l'hologramme depuis la configuration
-            String hologramName = plugin.getConfig().getString("hologram.name", "clickgame_hologram");
-            
-            // Récupérer l'hologramme existant
-            Hologram hologram = DHAPI.getHologram(hologramName);
-            if (hologram == null) {
-                plugin.getLogger().warning("L'hologramme '" + hologramName + "' n'existe pas");
-                return;
-            }
-            
-            List<String> lines = new ArrayList<>();
-            
-            // Récupérer les couleurs depuis la config
-            String textColor = "&f";
-            String scoreColor = "&e";
-            String bestScoreColor = "&6&l";
-            
-            if (plugin.getConfig().getBoolean("hologram.style.use-custom-colors", true)) {
-                textColor = plugin.getConfig().getString("hologram.style.text-color", "&f");
-                scoreColor = plugin.getConfig().getString("hologram.style.score-color", "&e");
-                bestScoreColor = plugin.getConfig().getString("hologram.style.best-score-color", "&6&l");
-            }
-            
-            // Ajouter l'en-tête avec les couleurs
-            List<String> headerLines = plugin.getConfig().getStringList("hologram.header");
-            for (String line : headerLines) {
-                lines.add(ChatColor.translateAlternateColorCodes('&', line.replace("%text-color%", textColor)));
-            }
-            
-            // Ajouter le score actuel avec la couleur du score
-            lines.add(ChatColor.translateAlternateColorCodes('&', 
-                String.format("%sScore actuel: %s%d", 
-                    textColor.replace("&", "§"), 
-                    scoreColor.replace("&", "§"), 
-                    currentScore)));
-
-            // Ajouter le meilleur score avec la couleur du meilleur score
-            String bestScoreLine = String.format("%sMeilleur score: %s%d", 
-                textColor.replace("&", "§"), 
-                bestScoreColor.replace("&", "§"), 
-                bestScore);
-
-            if (bestPlayerName != null) {
-                bestScoreLine += String.format(" %spar %s%s", 
-                    textColor.replace("&", "§"), 
-                    bestScoreColor.replace("&", "§"), 
-                    bestPlayerName);
-            }
-            lines.add(bestScoreLine);
-
-            // Ajouter le bouton avec les couleurs
-            List<String> buttonLines = plugin.getConfig().getStringList("hologram.button");
-            lines.addAll(buttonLines);
-
-            // Mettre à jour l'hologramme
-            eu.decentsoftware.holograms.api.DHAPI.setHologramLines(hologram, lines);
-
-            // Log de mise à jour si activé
-            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
-                plugin.getLogger().info("Hologramme mis a jour - Score: " + currentScore + ", Meilleur: " + bestScore);
-            }
-        } catch (Exception e) {
-            plugin.getLogger().severe("Erreur lors de la mise à jour de l'hologramme: " + e.getMessage());
-            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+            if (plugin.getConfig().getBoolean("settings.debug.log-errors", true)) {
                 e.printStackTrace();
             }
         }
     }
-
-    private void loadData() {
-        try {
-            // Créer le fichier de données s'il n'existe pas
-            dataFile = new File(plugin.getDataFolder(), "data.yml");
-            if (!dataFile.exists()) {
-                plugin.saveResource("data.yml", false);
-                if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
-                    plugin.getLogger().info("Fichier de donnees cree");
-                }
-            }
-            
-            // Charger la configuration
-            dataConfig = YamlConfiguration.loadConfiguration(dataFile);
-            
-            // Charger les données de base
-            currentScore = dataConfig.getInt("current-score", 0);
-            bestScore = dataConfig.getInt("best-score", 0);
-            bestPlayerName = dataConfig.getString("best-player", null);
-            
-            // Charger les clics des joueurs
-            if (dataConfig.contains("player-clicks")) {
-                ConfigurationSection clicksSection = dataConfig.getConfigurationSection("player-clicks");
-                if (clicksSection != null) {
-                    for (String uuidStr : clicksSection.getKeys(false)) {
-                        try {
-                            UUID uuid = UUID.fromString(uuidStr);
-                            int clicks = clicksSection.getInt(uuidStr);
-                            playerClicks.put(uuid, clicks);
-                        } catch (IllegalArgumentException e) {
-                            plugin.getLogger().warning("UUID invalide dans les donnees: " + uuidStr);
-                        }
-                    }
-                }
-            }
-            
-            // Charger les temps de clic
-            if (dataConfig.contains("last-click-times")) {
-                ConfigurationSection timesSection = dataConfig.getConfigurationSection("last-click-times");
-                if (timesSection != null) {
-                    for (String uuidStr : timesSection.getKeys(false)) {
-                        try {
-                            UUID uuid = UUID.fromString(uuidStr);
-                            long lastClick = timesSection.getLong(uuidStr);
-                            lastClickTimes.put(uuid, lastClick);
-                        } catch (IllegalArgumentException e) {
-                            plugin.getLogger().warning("UUID invalide dans les temps de clic: " + uuidStr);
-                        }
-                    }
-                }
-            }
-            
-            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                plugin.getLogger().info("Donnees chargees");
-                plugin.getLogger().info("Meilleur score: " + bestScore + " par " + 
-                    (bestPlayerName != null ? bestPlayerName : "Personne"));
-            }
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("Erreur lors du chargement: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    public void saveData() {
-        try {
-            if (dataFile == null) {
-                dataFile = new File(plugin.getDataFolder(), "data.yml");
-            }
-            
-            if (dataConfig == null) {
-                dataConfig = new YamlConfiguration();
-            }
-            
-            // Sauvegarder les scores
-            dataConfig.set("current-score", currentScore);
-            dataConfig.set("best-score", bestScore);
-            dataConfig.set("best-player", bestPlayerName);
-            
-            // Sauvegarder les clics des joueurs
-            ConfigurationSection clicksSection = dataConfig.createSection("player-clicks");
-            for (Map.Entry<UUID, Integer> entry : playerClicks.entrySet()) {
-                clicksSection.set(entry.getKey().toString(), entry.getValue());
-            }
-            
-            // Sauvegarder les temps de clic
-            ConfigurationSection timesSection = dataConfig.createSection("last-click-times");
-            for (Map.Entry<UUID, Long> entry : lastClickTimes.entrySet()) {
-                timesSection.set(entry.getKey().toString(), entry.getValue());
-            }
-            
-            // Sauvegarder le fichier
-            dataConfig.save(dataFile);
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("Erreur lors de la sauvegarde: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    public int getCurrentScore() {
-        return currentScore;
-    }
-    
-    public int getBestScore() {
-        return bestScore;
-    }
     
     /**
-     * Envoie une requête au webhook Discord
+     * Envoie un message à un webhook Discord de manière asynchrone
      * @param webhookUrl L'URL du webhook Discord
      * @param message Le message à envoyer
      */
     private void sendDiscordWebhook(String webhookUrl, String message) {
         HttpURLConnection connection = null;
         try {
-            // Créer le payload JSON avec Gson
-            JsonObject json = new JsonObject();
-            json.addProperty("content", message);
-            
-            // Créer la requête HTTP avec URI pour éviter la dépréciation
-            URI uri = new URI(webhookUrl);
-            URL url = uri.toURL();
-            
-            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                plugin.getLogger().info("Tentative de connexion au webhook...");
-            }
-            
+            // Créer la connexion avec URI pour éviter le constructeur déprécié
+            URL url = URI.create(webhookUrl).toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -497,12 +383,18 @@ public class GameManager {
             connection.setReadTimeout(10000);    // 10 secondes de timeout
             connection.setDoOutput(true);
             
+            // Créer le payload JSON
+            JsonObject json = new JsonObject();
+            json.addProperty("content", message);
+            
+            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
+                plugin.getLogger().info("Tentative de connexion au webhook...");
+                plugin.getLogger().info("Envoi du message: " + message);
+            }
+            
             // Envoyer les données
             try (OutputStream os = connection.getOutputStream()) {
                 String jsonPayload = json.toString();
-                if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                    plugin.getLogger().info("Envoi du payload JSON: " + jsonPayload);
-                }
                 byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 os.flush();
@@ -530,7 +422,11 @@ public class GameManager {
                         }
                         
                         if (responseCode >= 200 && responseCode < 300) {
-                            plugin.getLogger().info("Webhook envoyé avec succès");
+                            String successMsg = "Webhook envoye avec succes";
+                            plugin.getLogger().info(successMsg);
+                            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+                                plugin.getLogger().info("[HOLOGRAM] " + successMsg);
+                            }
                             if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
                                 plugin.getLogger().info("Réponse complète: " + response);
                             }
@@ -616,6 +512,9 @@ public class GameManager {
     /**
      * Charge la position de l'hologramme depuis la configuration et le crée s'il n'existe pas
      */
+    /**
+     * Charge la position de l'hologramme depuis la configuration et le crée s'il n'existe pas
+     */
     private void loadHologramLocation() {
         try {
             // Vérifier si une position est enregistrée dans la configuration
@@ -654,6 +553,229 @@ public class GameManager {
             plugin.getLogger().severe("ERREUR: Impossible de creer ou mettre a jour l'hologramme !");
             plugin.getLogger().severe("Cause : " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Nettoie les joueurs inactifs de la mémoire
+     */
+    private void cleanupInactivePlayers() {
+        if (!plugin.getConfig().getBoolean("optimization.enable-memory-cleanup", false)) {
+            return;
+        }
+        
+        int hours = plugin.getConfig().getInt("optimization.cleanup-inactive-after", 72);
+        long inactiveThreshold = System.currentTimeMillis() - (hours * 60 * 60 * 1000L);
+        
+        int beforeClicks = playerClicks.size();
+        int beforeTimes = lastClickTimes.size();
+        
+        playerClicks.keySet().removeIf(uuid -> 
+            !lastClickTimes.containsKey(uuid) || 
+            lastClickTimes.get(uuid) < inactiveThreshold
+        );
+        
+        lastClickTimes.values().removeIf(time -> time < inactiveThreshold);
+        
+        if (plugin.getConfig().getBoolean("settings.debug.log-memory", false)) {
+            plugin.getLogger().info(String.format(
+                "Nettoyage mémoire: %d -> %d joueurs (clicks), %d -> %d (derniers clics)",
+                beforeClicks, playerClicks.size(),
+                beforeTimes, lastClickTimes.size()
+            ));
+        }
+    }
+    
+    /**
+     * Planifie le nettoyage périodique de la mémoire
+     */
+    private void scheduleMemoryCleanup() {
+        // Toutes les 6 heures
+        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(
+            plugin,
+            this::cleanupInactivePlayers,
+            20 * 60 * 60 * 6,  // Délai initial (6 heures)
+            20 * 60 * 60 * 6   // Période (toutes les 6 heures)
+        );
+        plugin.getLogger().info("Nettoyage automatique de la mémoire planifié");
+    }
+    
+    /**
+     * Charge les messages en cache
+     */
+    private void loadMessages() {
+        ConfigurationSection messagesSection = plugin.getConfig().getConfigurationSection("messages");
+        if (messagesSection != null) {
+            cachedMessages.clear();
+            for (String key : messagesSection.getKeys(true)) {
+                if (messagesSection.isString(key)) {
+                    cachedMessages.put(
+                        key,
+                        ChatColor.translateAlternateColorCodes('&', messagesSection.getString(key))
+                    );
+                }
+            }
+            plugin.getLogger().info("Cached messages loaded: " + cachedMessages.size());
+        }
+    }
+    
+    /**
+     * Récupère un message avec gestion du cache
+     */
+    public String getMessage(String path, String def) {
+        if (plugin.getConfig().getBoolean("optimization.enable-message-caching", true)) {
+            return cachedMessages.getOrDefault(path, def);
+        }
+        return ChatColor.translateAlternateColorCodes('&', 
+            plugin.getConfig().getString("messages." + path, def));
+    }
+    
+    /**
+     * Met à jour l'hologramme avec gestion de la limitation de fréquence
+     */
+    public void updateHologram() {
+        // Vérification du throttling
+        if (plugin.getConfig().getBoolean("optimization.enable-hologram-update-throttling", true)) {
+            long currentTime = System.currentTimeMillis();
+            long delay = plugin.getConfig().getLong("optimization.hologram-update-delay", 1000);
+            
+            if (currentTime - lastHologramUpdate < delay) {
+                return;
+            }
+            lastHologramUpdate = currentTime;
+        }
+        
+        try {
+            // Récupérer le nom de l'hologramme depuis la configuration
+            String hologramName = plugin.getConfig().getString("hologram.name", "clickgame_hologram");
+            
+            // Récupérer l'hologramme existant
+            Hologram hologram = DHAPI.getHologram(hologramName);
+            if (hologram == null) {
+                plugin.getLogger().warning("L'hologramme '" + hologramName + "' n'existe pas");
+                return;
+            }
+            
+            // Mettre à jour l'hologramme avec les nouvelles données
+            updateHologramContent(hologram);
+            
+        } catch (Exception e) {
+            plugin.getLogger().severe("Erreur lors de la mise à jour de l'hologramme: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
+     * Met à jour le contenu de l'hologramme
+     */
+    private void updateHologramContent(Hologram hologram) {
+        List<String> lines = new ArrayList<>();
+        
+        // Récupérer les couleurs depuis la config
+        String textColor = "&f";
+        String scoreColor = "&e";
+        String bestScoreColor = "&6&l";
+        
+        if (plugin.getConfig().getBoolean("hologram.style.use-custom-colors", true)) {
+            textColor = plugin.getConfig().getString("hologram.style.text-color", "&f");
+            scoreColor = plugin.getConfig().getString("hologram.style.score-color", "&e");
+            bestScoreColor = plugin.getConfig().getString("hologram.style.best-score-color", "&6&l");
+        }
+        
+        // Ajouter l'en-tête avec les couleurs
+        List<String> headerLines = plugin.getConfig().getStringList("hologram.header");
+        for (String line : headerLines) {
+            lines.add(ChatColor.translateAlternateColorCodes('&', line.replace("%text-color%", textColor)));
+        }
+        
+        // Ajouter le score actuel avec la couleur du score
+        lines.add(ChatColor.translateAlternateColorCodes('&', 
+            String.format("%sScore actuel: %s%d", 
+                textColor.replace("&", "§"), 
+                scoreColor.replace("&", "§"), 
+                currentScore)));
+
+        // Ajouter le meilleur score avec la couleur du meilleur score
+        String bestScoreLine = String.format("%sMeilleur score: %s%d", 
+            textColor.replace("&", "§"), 
+            bestScoreColor.replace("&", "§"), 
+            bestScore);
+
+        if (bestPlayerName != null) {
+            bestScoreLine += String.format(" %spar %s%s", 
+                textColor.replace("&", "§"), 
+                bestScoreColor.replace("&", "§"), 
+                bestPlayerName);
+        }
+        lines.add(bestScoreLine);
+
+        // Ajouter le bouton avec les couleurs
+        List<String> buttonLines = plugin.getConfig().getStringList("hologram.button");
+        lines.addAll(buttonLines);
+
+        // Mettre à jour l'hologramme
+        DHAPI.setHologramLines(hologram, lines);
+    }
+    
+    /**
+     * Sauvegarde les données du jeu dans le fichier de données
+     */
+    public void saveData() {
+        try {
+            // Créer le fichier s'il n'existe pas
+            if (!dataFile.exists()) {
+                if (!dataFile.getParentFile().exists()) {
+                    dataFile.getParentFile().mkdirs();
+                }
+                dataFile.createNewFile();
+            }
+            
+            // Sauvegarder les données
+            dataConfig.set("best-score", bestScore);
+            if (bestPlayerName != null) {
+                dataConfig.set("best-player", bestPlayerName);
+            }
+            
+            // Sauvegarder les clics des joueurs
+            for (Map.Entry<UUID, Integer> entry : playerClicks.entrySet()) {
+                dataConfig.set("player-clicks." + entry.getKey().toString(), entry.getValue());
+            }
+            
+            // Sauvegarder les derniers temps de clic
+            for (Map.Entry<UUID, Long> entry : lastClickTimes.entrySet()) {
+                dataConfig.set("last-click-times." + entry.getKey().toString(), entry.getValue());
+            }
+            
+            dataConfig.save(dataFile);
+            
+        } catch (IOException e) {
+            plugin.getLogger().severe("Erreur lors de la sauvegarde des données: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug.log-save-load", false)) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
+     * Nettoie les ressources lors de la désactivation du plugin
+     */
+    public void onDisable() {
+        // Sauvegarder les données à l'arrêt
+        saveData();
+        
+        // Arrêt du pool de threads
+        if (threadPool != null) {
+            threadPool.shutdown();
+            try {
+                if (!threadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    threadPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                threadPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

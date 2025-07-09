@@ -29,4 +29,4 @@ permissions:
     default: false
   clickgame.reset:
     description: Permet de réinitialiser le score en cliquant sur l'hologramme
-    default: op
+    default: false

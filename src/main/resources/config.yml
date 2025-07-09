@@ -106,3 +106,34 @@ webhook:
     🏆 **Joueur:** %player%
     ⚡ **Score atteint:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Optimisations
+optimization:
+  # Active le nettoyage automatique de la mémoire
+  enable-memory-cleanup: false
+  # Période d'inactivité avant suppression (en heures)
+  cleanup-inactive-after: 72
+  
+  # Active la mise en cache des messages
+  enable-message-caching: true
+  
+  # Active la limitation des mises à jour de l'hologramme
+  enable-hologram-update-throttling: true
+  
+  # Délai minimum entre les mises à jour de l'hologramme évite de faire beuguer le serveur si une personne cheat(en millisecondes)
+  hologram-update-delay: 200
+  
+  # Active le pool de threads pour les webhooks
+  enable-thread-pool: true
+  
+  # Taille maximale du pool de threads
+  max-thread-pool-size: 10
+  
+  # Délai d'attente pour l'arrêt du pool de threads (en secondes)
+  thread-pool-shutdown-timeout: 5
+  
+  # Activer les logs détaillés pour le débogage
+  enable-debug-logs: false
+  
+  # Délai de sauvegarde automatique (en secondes, 0 pour désactiver)
+  auto-save-interval: 300
