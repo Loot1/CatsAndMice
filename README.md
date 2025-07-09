@@ -56,7 +56,7 @@ Configuration des messages et des paramètres du jeu :
 - `webhook.alert-message` : Message personnalisé pour les notifications d'alerte
 
 ### data.yml
-Sauvegarde des scores et du meilleur joueur (ne pas modifier manuellement)
+Sauvegarde des scores et du meilleur joueur.
 
 ## Configuration des Webhooks Discord
 
@@ -85,10 +85,13 @@ webhook:
   mention-enabled: true
   mention: '@everyone'
   alert-message: |-
-    🎉 **Nouveau record !**
-    👤 Joueur: %player%
-    🏆 Score: %score%
-    ⏰ Date: %date%
+    **🎮 CLICKGAME - 1-2-3-Modo**
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ⏰***Alerte score élevé***
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    🏆 **Joueur:** %player%
+    ⚡ **Score atteint:** %score%
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### Variables disponibles dans les messages
