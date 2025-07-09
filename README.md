@@ -8,9 +8,8 @@ Un plugin Minecraft interactif avec un système de score basé sur des clics. Le
 - Meilleur score enregistré automatiquement avec le nom du joueur
 - Délai configurable entre chaque clic (5 minutes par défaut)
 - Possibilité de contourner le délai avec une permission
-- Interface d'administration complète
-- Gestion fine des permissions
-- Sauvegarde automatique des données
+- Gestion facile au niveaux des permissions
+- Sauvegarde automatique des données dans `data.yml`
 - Notifications Discord via webhook pour les événements importants
 - Mentions personnalisables dans les notifications Discord
 
