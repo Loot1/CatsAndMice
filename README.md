@@ -15,7 +15,7 @@ Un plugin Minecraft interactif avec un système de score basé sur des clics. Le
 
 ## Commandes
 
-- `/clickgame create` - Créer un nouvel hologramme à votre position (nécessite `clickgame.command`)
+- `/clickgame create` - Créer un nouvel hologramme à votre position `!!Attention le créé sous les pieds!!` (nécessite `clickgame.command`)
 - `/clickgame reload` - Recharger la configuration (nécessite `clickgame.command`)
 
 ## Permissions
