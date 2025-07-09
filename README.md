@@ -79,8 +79,6 @@ Sauvegarde des scores et du meilleur joueur.
 webhook:
   enabled: true
   url: 'https://discord.com/api/webhooks/votre_url_ici'
-  username: 'ClickGame Bot'
-  avatar-url: 'https://i.imgur.com/example.png'
   threshold: 100
   mention-enabled: true
   mention: '@everyone'
