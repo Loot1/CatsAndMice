@@ -7,6 +7,10 @@ description: Un jeu de clics avec classement et meilleur score
 depend:
   - DecentHolograms
 
+# Dépendances optionnelles
+softdepend:
+  - LuckPerms
+
 commands:
   clickgame:
     description: Commandes du jeu de clics

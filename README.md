@@ -1,106 +1,100 @@
-# ClickGame - Plugin Minecraft
+# 🐭 1-2-3 Modo - Plugin Minecraft
 
-Un plugin Minecraft interactif avec un système de score basé sur des clics. Les joueurs peuvent augmenter leur score en cliquant sur l'hologramme avec un délai entre chaque clic. Les administrateurs peuvent contourner ce délai ou réinitialiser le score. Le plugin inclut également des notifications Discord via webhook pour les événements importants.
+Un plugin interactif pour les serveurs Minecraft qui permet aux joueurs de participer à un jeu de clics compétitif avec affichage des scores en temps réel via un hologramme. Parfait pour les événements communautaires et les animations de serveur.
 
-## Fonctionnalités
+## 📋 Fonctionnalités
 
+### 🎮 Système de jeu
 - Système de score interactif avec hologramme cliquable
-- Meilleur score enregistré automatiquement avec le nom du joueur
+- Affichage des 10 derniers clics (réels ou factices)
 - Délai configurable entre chaque clic (5 minutes par défaut)
-- Possibilité de contourner le délai avec la permission `clickgame.bypass`
-- Réinitialisation du score possible avec la permission `clickgame.reset`
-- Gestion facile au niveau des permissions
-- Sauvegarde automatique des données dans `data.yml`
-- Notifications Discord via webhook pour les scores élevés
-- Mentions personnalisables dans les notifications Discord
+- Meilleur score enregistré avec le nom du joueur
+- Interface visuelle attrayante avec codes couleurs
+
+### 🔧 Fonctionnalités avancées
+- Gestion complète des permissions
+- Sauvegarde automatique des données
+- Support des préfixes personnalisés (LuckPerms)
 - Système de logs détaillés pour le débogage
+- Personnalisation complète des messages
 
-## Commandes
+### 🤖 Intégration Discord
+- Notifications via webhook pour les scores élevés
+- Messages personnalisables avec mentions
+- Seuil de score configurable
+- Support des rôles et mentions
 
-- `/clickgame create` - Créer un nouvel hologramme à votre position `!!Attention le créé sous les pieds!!` (nécessite `clickgame.command`)
-- `/clickgame reload` - Recharger la configuration (nécessite `clickgame.command`)
+## 🚀 Installation
 
-## Permissions
+### Prérequis
+- Serveur Minecraft Spigot/Paper 1.20.6 (ou version supérieure)
+- Java 22
+- DecentHolograms 2.9.5
 
-- `clickgame.command` - Accès aux commandes `/clickgame` 
-- `clickgame.bypass` - Contourne le délai entre les clics 
-- `clickgame.reset` - Permet de réinitialiser le score en cliquant sur l'hologramme 
-- `clickgame.*` - Donne accès à toutes les fonctionnalités 
-
-## Installation
-
+### Étapes d'installation
 1. Téléchargez la dernière version du plugin
-2. Placez le fichier JAR dans le dossier `plugins` de votre serveur
-3. Installez [DecentHolograms](https://www.spigotmc.org/resources/96927/) si ce n'est pas déjà fait
-4. Redémarrez le serveur
-5. Utilisez `/clickgame create` pour créer l'hologramme à votre position actuelle
+2. Placez le fichier JAR dans le dossier `plugins`
+3. Démarrez/Redémarrez votre serveur
+4. Utilisez la commande `/clickgame create` pour créer l'hologramme
+5. Configurez le plugin via `plugins/ClickGame/config.yml`
 
-## Configuration
+## ⚙️ Configuration
 
-Le plugin crée automatiquement les fichiers de configuration dans `plugins/ClickGame/` :
+### Fichiers principaux
+- `plugins/ClickGame/config.yml` - Configuration générale
+- `plugins/ClickGame/data.yml` - Sauvegarde des données
 
-### config.yml
-Configuration des messages et des paramètres du jeu :
+### Commandes
+| Commande | Permission | Description |
+|----------|------------|-------------|
+| `/clickgame create` | `clickgame.command` | Crée un nouvel hologramme |
+| `/clickgame reload` | `clickgame.command` | Recharge la configuration |
 
-#### Paramètres généraux
-- `settings.click-delay` : Délai en secondes entre chaque clic (par défaut: 300 secondes / 5 minutes)
-- `settings.wait-message` : Message affiché lorsqu'un joueur doit attendre avant de pouvoir cliquer à nouveau
-- `settings.new-best-score` : Message affiché lorsqu'un nouveau meilleur score est atteint
-- `settings.time-format` : Format de l'heure affichée dans les messages
+### Permissions
+| Permission | Description |
+|------------|-------------|
+| `clickgame.command` | Accès aux commandes du plugin |
+| `clickgame.bypass` | Contourne le délai entre les clics que pour les joueurs |
+| `clickgame.reset` | Permet de réinitialiser le score |
+| `clickgame.*` | Donne accès à toutes les fonctionnalités |
 
-#### Paramètres de débogage
-- `settings.debug.log-clicks` : Active les logs des clics (par défaut: false)
-- `settings.debug.log-records` : Active les logs des records (par défaut: false)
-- `settings.debug.log-hologram-update` : Active les logs des mises à jour d'hologramme (par défaut: false)
+## 🎨 Personnalisation
 
-#### Configuration des webhooks Discord
-- `webhook.enabled` : Active ou désactive les notifications Discord (par défaut: false)
-- `webhook.url` : URL du webhook Discord (remplacer par votre URL)
-- `webhook.threshold` : Seuil de score pour déclencher une notification (par défaut: 100)
-- `webhook.mention-enabled` : Active les mentions dans les notifications (par défaut: false)
-- `webhook.mention` : Mention à utiliser (@everyone, @here ou <@&ROLE_ID>)
-- `webhook.alert-message` : Message personnalisé pour les notifications d'alerte
+### Hologramme
+- Titre personnalisable via `hologram.display.title`
+- Format des messages de clic/réinitialisation personnalisable
+- Affichage des 10 derniers clics
+- Gestion des faux joueurs pour maintenir l'affichage
 
-### data.yml
-Sauvegarde des scores et du meilleur joueur.
+### Messages
+Tous les messages sont personnalisables dans le fichier de configuration, notamment :
+- Messages de score
+- Messages d'erreur
+- Messages de notification
+- Messages de réinitialisation
 
-## Optimisation
+## 📊 Optimisation
 
-### Configuration recommandée pour de meilleures performances
+### Paramètres recommandés
+- **Hologramme** :
+  - Désactivez les mises à jour inutiles
+  - Limitez le nombre de lignes affichées
+  - Utilisez des messages courts
 
-#### Paramètres de débogage
-- `log-clicks`: Désactivez en production (`false`) pour réduire l'utilisation du CPU
-- `log-records`: Activez uniquement si nécessaire pour le débogage
-- `log-hologram-update`: Désactivez en production pour réduire la charge serveur
+- **Performances** :
+  - Désactivez les logs en production
+  - Augmentez le délai entre les clics si nécessaire
+  - Utilisez un serveur dédié pour les webhooks
 
-#### Optimisation des webhooks
-- Évitez d'utiliser `@everyone` dans les mentions si vous avez beaucoup de membres
-- Augmentez le seuil (`webhook.threshold`) pour réduire le nombre de notifications
-- Désactivez les webhooks si non nécessaires
+### Configuration des webhooks
+1. Créez un webhook dans les paramètres de votre salon Discord
+2. Activez les webhooks dans la configuration
+3. Configurez le seuil de notification
+4. Personnalisez le message d'alerte
 
-#### Gestion de la mémoire
-- Le plugin utilise un cache pour les messages fréquemment utilisés
-- Les données sont sauvegardées de manière asynchrone pour éviter les ralentissements
-- Les tâches planifiées sont optimisées pour minimiser l'impact sur les performances
-
-#### Recommandations pour les serveurs chargés
-1. Augmentez le `click-delay` si nécessaire (par exemple à 10 minutes)
-2. Désactivez les animations inutiles dans la configuration
-3. Limitez les logs au strict nécessaire
-4. Utilisez un serveur dédié pour les webhooks si vous avez beaucoup de trafic
-
-## Configuration des Webhooks Discord
-
-### Création d'un webhook Discord
-
-1. **Créer un webhook** :
-   - Allez dans les paramètres de votre salon Discord (icône d'engrenage)
-   - Sélectionnez "Intégrations" puis "Créer un webhook"
-   - Personnalisez le nom et l'avatar du webhook si nécessaire
-   - Copiez l'URL du webhook généré
-
-2. **Configuration du plugin** :
-   - Ouvrez le fichier `config.yml`
+## 📅 Version
+**Dernière version** : 1.0.2  
+**Dernière mise à jour** : 11/07/2025
    - Activez les webhooks : `webhook.enabled: true`
    - Collez votre URL de webhook : `webhook.url: 'https://discord.com/api/webhooks/...'`
    - Définissez le seuil de score pour les alertes : `webhook.threshold: 100`

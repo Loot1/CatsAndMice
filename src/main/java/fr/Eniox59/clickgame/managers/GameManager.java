@@ -1,23 +1,28 @@
 package fr.Eniox59.clickgame.managers;
 
-import com.google.gson.JsonObject;
 import fr.Eniox59.clickgame.ClickGame;
+import fr.Eniox59.clickgame.utils.DiscordWebhook;
+
+import java.io.IOException;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.cacheddata.CachedMetaData;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.Random;
 
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
@@ -28,13 +33,17 @@ public class GameManager {
     private int currentScore;
     private int bestScore;
     private String bestPlayerName;
+    // Stockage des clics des joueurs
     private final Map<UUID, Integer> playerClicks;
     private final Map<UUID, Long> lastClickTimes;
+    // Stocke l'UUID du joueur, le timestamp et le score au moment du clic
+    private final List<Map.Entry<UUID, Map.Entry<Long, Integer>>> clickHistory;
     private final Map<String, String> cachedMessages;
     private File dataFile;
     private FileConfiguration dataConfig;
     private final ExecutorService threadPool;
     private long lastHologramUpdate = 0;
+    private Hologram hologram;
     
     /**
      * Charge les données du jeu depuis le fichier de données
@@ -86,6 +95,7 @@ public class GameManager {
         this.plugin = plugin;
         this.playerClicks = new HashMap<>();
         this.lastClickTimes = new HashMap<>();
+        this.clickHistory = new ArrayList<>();
         this.cachedMessages = new HashMap<>();
         this.currentScore = 0;
         
@@ -106,12 +116,9 @@ public class GameManager {
             loadMessages();
         }
         
-        // Charger la position de l'hologramme si elle existe
-        loadHologramLocation();
-        
-        // Planifier le nettoyage de la mémoire si activé
-        if (plugin.getConfig().getBoolean("optimization.enable-memory-cleanup", false)) {
-            scheduleMemoryCleanup();
+        // Charger la position de l'hologramme si configuré
+        if (plugin.getConfig().getBoolean("hologram.enabled", true)) {
+            loadHologramLocation();
         }
     }
     
@@ -190,48 +197,64 @@ public class GameManager {
     
     public void addClick(Player player) {
         try {
-            // Incrémenter le score
+            UUID playerId = player.getUniqueId();
+            long currentTime = System.currentTimeMillis();
+            
+            // Mettre à jour le compteur de clics
+            int newClickCount = playerClicks.getOrDefault(playerId, 0) + 1;
+            playerClicks.put(playerId, newClickCount);
+            lastClickTimes.put(playerId, currentTime);
+            
+            // Enregistrer ce clic dans l'historique avec le score au moment du clic
+            int scoreAtClick = newClickCount;
+            Map.Entry<Long, Integer> timeAndScore = new AbstractMap.SimpleEntry<>(currentTime, scoreAtClick);
+            // Ajouter à la fin de la liste pour un affichage chronologique
+            clickHistory.add(new AbstractMap.SimpleEntry<>(playerId, timeAndScore));
+            
+            // Log de débogage
+            if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
+                plugin.getLogger().info(String.format("[DEBUG] Ajout d'un clic - Joueur: %s, Score: %d, Taille de l'historique: %d", 
+                    player.getName(), scoreAtClick, clickHistory.size()));
+            }
+            
+            // Limiter la taille de l'historique
+            while (clickHistory.size() > 1000) { // Garder un maximum de 1000 entrées
+                clickHistory.remove(clickHistory.size() - 1);
+            }
+            
             currentScore++;
+            
+            // Log de débogage
+            if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
+                plugin.getLogger().info(String.format("[DEBUG] Score actuel: %d, Meilleur score: %d par %s", 
+                    currentScore, bestScore, bestPlayerName != null ? bestPlayerName : "Personne"));
+            }
             
             // Vérifier si c'est un nouveau record
             if (currentScore > bestScore) {
-                int previousBest = bestScore;
-                String previousBestPlayer = bestPlayerName;
-                
                 bestScore = currentScore;
                 bestPlayerName = player.getName();
                 saveData();
                 
-                // Envoyer la notification de record à tous les joueurs
-                if (plugin.getConfig().getBoolean("settings.debug.log-records", true)) {
-                    String recordMessage = ChatColor.translateAlternateColorCodes('&', 
-                        plugin.getConfig().getString("messages.new-best-score", "&6&lNouveau meilleur score : &e%score% &6par &a%player%&6!")
-                            .replace("%player%", player.getName())
-                            .replace("%score%", String.valueOf(bestScore))
-                            .replace("%previous_score%", String.valueOf(previousBest))
-                            .replace("%previous_player%", previousBestPlayer != null ? previousBestPlayer : "Personne")
-                    );
+                // Envoyer une notification si activé
+                if (plugin.getConfig().getBoolean("settings.notify-new-best-score", true) && 
+                    plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
+                    String message = getMessage("new-best-score", "&6Nouveau meilleur score: &e%score% &6par &a%player%&6!")
+                        .replace("%score%", String.valueOf(bestScore))
+                        .replace("%player%", bestPlayerName);
                     
-                    // Envoyer le message à tous les joueurs en ligne
+                    // Envoyer à tous les joueurs
                     for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
-                        onlinePlayer.sendMessage(recordMessage);
-                    }
-                    
-                    if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                        plugin.getLogger().info(String.format("[RECORD] %s a etabli un nouveau record: %d points (precedent: %d par %s)",
-                            player.getName(), bestScore, previousBest, previousBestPlayer != null ? previousBestPlayer : "Personne"));
+                        onlinePlayer.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
                     }
                 }
             }
             
-            // Vérifier si on doit déclencher une alerte de score
-            checkScoreAlert(player);
-            
             // Mettre à jour l'hologramme
             updateHologram();
             
-            // Ajouter le clic au compteur du joueur
-            playerClicks.merge(player.getUniqueId(), 1, Integer::sum);
+            // Vérifier si une alerte de score doit être déclenchée
+            checkScoreAlert(player);
             
         } catch (Exception e) {
             plugin.getLogger().severe("Erreur lors de l'ajout d'un clic: " + e.getMessage());
@@ -246,9 +269,11 @@ public class GameManager {
      */
     private void checkScoreAlert(Player player) {
         try {
+            boolean debugLogs = plugin.getConfig().getBoolean("settings.debug.log-records", false);
+            
             // Vérifier si le webhook est activé
             if (!plugin.getConfig().getBoolean("webhook.enabled", false)) {
-                if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
+                if (debugLogs) {
                     plugin.getLogger().info("Webhook désactivé dans la configuration");
                 }
                 return;
@@ -257,62 +282,85 @@ public class GameManager {
             // Vérifier si le score atteint le seuil
             int threshold = plugin.getConfig().getInt("webhook.threshold", 100);
             if (currentScore == threshold) {
-                String webhookUrl = plugin.getConfig().getString("webhook.url");
+                // Afficher le message dans la console si activé
+                if (plugin.getConfig().getBoolean("webhook.console-message", true)) {
+                    String consoleMessage = plugin.getConfig().getString("webhook.console-alert", 
+                        "&6[ClickGame] &aAlerte de score: %player% a atteint %score% points")
+                        .replace("%player%", player.getName())
+                        .replace("%score%", String.valueOf(currentScore));
+                    plugin.getLogger().info(consoleMessage.replace("&", "§"));
+                }
                 
-                // Vérification plus stricte de l'URL
+                // Vérifier si l'URL du webhook est valide
+                String webhookUrl = plugin.getConfig().getString("webhook.url");
                 if (webhookUrl == null || webhookUrl.isEmpty() || 
                     !webhookUrl.startsWith("https://discord.com/api/webhooks/") || 
                     webhookUrl.contains("votre_webhook_ici")) {
-                    plugin.getLogger().warning("URL du webhook non configurée ou invalide: " + 
-                        (webhookUrl != null && !webhookUrl.isEmpty() ? "(URL masquée pour des raisons de sécurité)" : "null/empty"));
-                    return;
+                        if (debugLogs) {
+                            plugin.getLogger().warning("URL du webhook non configurée ou invalide: " + 
+                                (webhookUrl != null && !webhookUrl.isEmpty() ? 
+                                "(URL masquée pour des raisons de sécurité)" : "null/empty"));
+                        }
+                        return;
                 }
                 
-                // Récupération du message avec une valeur par défaut plus claire
+                // Récupération du message avec une valeur par défaut
                 String defaultMessage = "**🎮 CLICKGAME - NOUVEAU RECORD !**\n" +
                                      "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                                      "🏆 **Joueur:** %player%\n" +
                                      "⚡ **Score atteint:** %score%\n" +
                                      "━━━━━━━━━━━━━━━━━━━━━━━━━━━";
                 
-                String message = plugin.getConfig().getString("webhook.alert-message", defaultMessage)
+                // Construire le message de base
+                String baseMessage = plugin.getConfig().getString("webhook.alert-message", defaultMessage)
                         .replace("%player%", player.getName())
                         .replace("%score%", String.valueOf(currentScore));
                 
-                // Ajouter la mention si activée
+                // Construire le message final avec mention si nécessaire
+                final String message;
                 if (plugin.getConfig().getBoolean("webhook.mention-enabled", false)) {
                     String mention = plugin.getConfig().getString("webhook.mention", "");
                     if (mention != null && !mention.trim().isEmpty()) {
-                        message = mention + "\n" + message;
-                        if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
+                        message = mention + "\n" + baseMessage;
+                        if (debugLogs) {
                             plugin.getLogger().info("Mention ajoutée au webhook: " + mention);
                         }
+                    } else {
+                        message = baseMessage;
                     }
+                } else {
+                    message = baseMessage;
                 }
                 
                 // Log de débogage
-                if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                    plugin.getLogger().info("Envoi du webhook à: " + 
-                        webhookUrl.substring(0, Math.min(webhookUrl.length(), 30)) + "...");
-                    plugin.getLogger().info("Message à envoyer: " + message);
+                if (debugLogs) {
+                    String logMessage = String.format("Envoi du webhook pour le score de %s: %d points", 
+                        player.getName(), currentScore);
+                    plugin.getLogger().info("[WEBHOOK] " + logMessage);
                 }
                 
-                // Envoyer le webhook de manière asynchrone
-                final String finalMessage = message;
-                new Thread(() -> sendDiscordWebhook(webhookUrl, finalMessage)).start();
-                
-                // Log dans la console et dans les logs d'hologramme
-                String logMessage = String.format("Alerte de score envoyee via webhook: %s a atteint %d points", 
-                    player.getName(), currentScore);
-                plugin.getLogger().info(logMessage);
-                
-                if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
-                    plugin.getLogger().info("[HOLOGRAM] " + logMessage);
+                // Envoi du webhook dans un thread séparé pour ne pas bloquer le thread principal
+                if (plugin.getConfig().getBoolean("webhook.enabled", false)) {
+                    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                        try {
+                            DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
+                            webhook.setContent(message);
+                            webhook.execute();
+                            if (debugLogs) {
+                                plugin.getLogger().info("[WEBHOOK] Message envoyé avec succès à Discord");
+                            }
+                        } catch (IOException e) {
+                            plugin.getLogger().warning("Erreur lors de l'envoi du webhook: " + e.getMessage());
+                            if (debugLogs) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Erreur lors de l'envoi de l'alerte de score: " + e.getMessage());
-            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+            plugin.getLogger().severe("Erreur lors de la vérification de l'alerte de score: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug.log-errors", true)) {
                 e.printStackTrace();
             }
         }
@@ -330,20 +378,9 @@ public class GameManager {
                 return;
             }
             
-            int previousBest = bestScore;
-            String previousBestPlayer = bestPlayerName;
-            
-            // Réinitialiser le score actuel
-            currentScore = 0;
-            
-            // Mettre à jour l'hologramme
-            updateHologram();
-            
-            // Sauvegarder les modifications
-            saveData();
-            
-            // Message de confirmation
+            // Utiliser la nouvelle méthode resetGame qui gère l'affichage dans l'hologramme
             if (player != null) {
+                resetGame(player);
                 player.sendMessage("§aLe score a été réinitialisé !");
             }
             
@@ -352,8 +389,8 @@ public class GameManager {
                 plugin.getLogger().info(String.format(
                     "[SCORE] %s a réinitialisé le score (Ancien meilleur: %d par %s)", 
                     player != null ? player.getName() : "Console",
-                    previousBest,
-                    previousBestPlayer != null ? previousBestPlayer : "Personne"
+                    bestScore,
+                    bestPlayerName != null ? bestPlayerName : "Personne"
                 ));
             }
             
@@ -361,94 +398,6 @@ public class GameManager {
             plugin.getLogger().severe("Erreur lors de la réinitialisation du score: " + e.getMessage());
             if (plugin.getConfig().getBoolean("settings.debug.log-errors", true)) {
                 e.printStackTrace();
-            }
-        }
-    }
-    
-    /**
-     * Envoie un message à un webhook Discord de manière asynchrone
-     * @param webhookUrl L'URL du webhook Discord
-     * @param message Le message à envoyer
-     */
-    private void sendDiscordWebhook(String webhookUrl, String message) {
-        HttpURLConnection connection = null;
-        try {
-            // Créer la connexion avec URI pour éviter le constructeur déprécié
-            URL url = URI.create(webhookUrl).toURL();
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-            connection.setRequestProperty("User-Agent", "ClickGame-Plugin/1.0");
-            connection.setConnectTimeout(10000); // 10 secondes de timeout
-            connection.setReadTimeout(10000);    // 10 secondes de timeout
-            connection.setDoOutput(true);
-            
-            // Créer le payload JSON
-            JsonObject json = new JsonObject();
-            json.addProperty("content", message);
-            
-            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                plugin.getLogger().info("Tentative de connexion au webhook...");
-                plugin.getLogger().info("Envoi du message: " + message);
-            }
-            
-            // Envoyer les données
-            try (OutputStream os = connection.getOutputStream()) {
-                String jsonPayload = json.toString();
-                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-                os.flush();
-            } catch (IOException e) {
-                plugin.getLogger().severe("Erreur lors de l'envoi des données du webhook: " + e.getMessage());
-                return;
-            }
-            
-            // Vérifier la réponse
-            int responseCode = connection.getResponseCode();
-            String responseMessage = connection.getResponseMessage();
-            
-            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                plugin.getLogger().info("Réponse du serveur: " + responseCode + " " + responseMessage);
-            }
-            
-            // Lire la réponse, qu'il y ait une erreur ou non
-            try (InputStream inputStream = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
-                if (inputStream != null) {
-                    try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                        StringBuilder response = new StringBuilder();
-                        String responseLine;
-                        while ((responseLine = br.readLine()) != null) {
-                            response.append(responseLine.trim());
-                        }
-                        
-                        if (responseCode >= 200 && responseCode < 300) {
-                            String successMsg = "Webhook envoye avec succes";
-                            plugin.getLogger().info(successMsg);
-                            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
-                                plugin.getLogger().info("[HOLOGRAM] " + successMsg);
-                            }
-                            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                                plugin.getLogger().info("Réponse complète: " + response);
-                            }
-                        } else {
-                            plugin.getLogger().warning("Erreur lors de l'envoi du webhook: " + 
-                                responseCode + " " + responseMessage + " - " + response);
-                        }
-                    }
-                } else if (responseCode >= 400) {
-                    plugin.getLogger().warning("Erreur lors de l'envoi du webhook: " + 
-                        responseCode + " " + responseMessage + " (pas de détail supplémentaire)");
-                }
-            }
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("Erreur lors de l'envoi du webhook: " + e.getMessage());
-            if (plugin.getConfig().getBoolean("settings.debug.log-records", false)) {
-                e.printStackTrace();
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
             }
         }
     }
@@ -479,9 +428,15 @@ public class GameManager {
                 lines.add("&7Meilleur score: &60");
                 lines.add("&e&l[CLIQUEZ POUR JOUER]");
                 
-                Hologram hologram = DHAPI.createHologram(hologramName, location, false, lines);
+                // Supprimer l'ancien hologramme s'il existe
+                if (this.hologram != null) {
+                    this.hologram.delete();
+                }
                 
-                if (hologram != null) {
+                // Créer le nouvel hologramme
+                this.hologram = DHAPI.createHologram(hologramName, location, false, lines);
+                
+                if (this.hologram != null) {
                     if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
                         plugin.getLogger().info("Hologramme cree avec succes !");
                     }
@@ -510,10 +465,8 @@ public class GameManager {
     }
     
     /**
-     * Charge la position de l'hologramme depuis la configuration et le crée s'il n'existe pas
-     */
-    /**
-     * Charge la position de l'hologramme depuis la configuration et le crée s'il n'existe pas
+     * Charge la position de l'hologramme depuis la configuration et le crée s'il n'existe pas.
+     * La position est chargée depuis le fichier de configuration du plugin.
      */
     private void loadHologramLocation() {
         try {
@@ -551,54 +504,13 @@ public class GameManager {
         } catch (Exception e) {
             plugin.getLogger().warning("Erreur lors du chargement de la position de l'hologramme: " + e.getMessage());
             plugin.getLogger().severe("ERREUR: Impossible de creer ou mettre a jour l'hologramme !");
-            plugin.getLogger().severe("Cause : " + e.getMessage());
-            e.printStackTrace();
+            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+                e.printStackTrace();
+            }
         }
     }
     
-    /**
-     * Nettoie les joueurs inactifs de la mémoire
-     */
-    private void cleanupInactivePlayers() {
-        if (!plugin.getConfig().getBoolean("optimization.enable-memory-cleanup", false)) {
-            return;
-        }
-        
-        int hours = plugin.getConfig().getInt("optimization.cleanup-inactive-after", 72);
-        long inactiveThreshold = System.currentTimeMillis() - (hours * 60 * 60 * 1000L);
-        
-        int beforeClicks = playerClicks.size();
-        int beforeTimes = lastClickTimes.size();
-        
-        playerClicks.keySet().removeIf(uuid -> 
-            !lastClickTimes.containsKey(uuid) || 
-            lastClickTimes.get(uuid) < inactiveThreshold
-        );
-        
-        lastClickTimes.values().removeIf(time -> time < inactiveThreshold);
-        
-        if (plugin.getConfig().getBoolean("settings.debug.log-memory", false)) {
-            plugin.getLogger().info(String.format(
-                "Nettoyage mémoire: %d -> %d joueurs (clicks), %d -> %d (derniers clics)",
-                beforeClicks, playerClicks.size(),
-                beforeTimes, lastClickTimes.size()
-            ));
-        }
-    }
-    
-    /**
-     * Planifie le nettoyage périodique de la mémoire
-     */
-    private void scheduleMemoryCleanup() {
-        // Toutes les 6 heures
-        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(
-            plugin,
-            this::cleanupInactivePlayers,
-            20 * 60 * 60 * 6,  // Délai initial (6 heures)
-            20 * 60 * 60 * 6   // Période (toutes les 6 heures)
-        );
-        plugin.getLogger().info("Nettoyage automatique de la mémoire planifié");
-    }
+
     
     /**
      * Charge les messages en cache
@@ -615,7 +527,7 @@ public class GameManager {
                     );
                 }
             }
-            plugin.getLogger().info("Cached messages loaded: " + cachedMessages.size());
+            plugin.getLogger().info("Messages en cache chargés : " + cachedMessages.size());
         }
     }
     
@@ -634,30 +546,29 @@ public class GameManager {
      * Met à jour l'hologramme avec gestion de la limitation de fréquence
      */
     public void updateHologram() {
-        // Vérification du throttling
-        if (plugin.getConfig().getBoolean("optimization.enable-hologram-update-throttling", true)) {
-            long currentTime = System.currentTimeMillis();
-            long delay = plugin.getConfig().getLong("optimization.hologram-update-delay", 1000);
-            
-            if (currentTime - lastHologramUpdate < delay) {
-                return;
-            }
-            lastHologramUpdate = currentTime;
-        }
-        
         try {
-            // Récupérer le nom de l'hologramme depuis la configuration
+            // Vérification du throttling
+            if (plugin.getConfig().getBoolean("optimization.enable-hologram-update-throttling", true)) {
+                long currentTime = System.currentTimeMillis();
+                long delay = plugin.getConfig().getLong("optimization.hologram-update-delay", 1000);
+                
+                if (currentTime - lastHologramUpdate < delay) {
+                    return; // Ne pas mettre à jour si le délai n'est pas écoulé
+                }
+            }
+            
             String hologramName = plugin.getConfig().getString("hologram.name", "clickgame_hologram");
             
             // Récupérer l'hologramme existant
-            Hologram hologram = DHAPI.getHologram(hologramName);
-            if (hologram == null) {
+            this.hologram = DHAPI.getHologram(hologramName);
+            if (this.hologram == null) {
                 plugin.getLogger().warning("L'hologramme '" + hologramName + "' n'existe pas");
                 return;
             }
             
-            // Mettre à jour l'hologramme avec les nouvelles données
-            updateHologramContent(hologram);
+            // Mettre à jour le contenu de l'hologramme
+            updateHologramContent(this.hologram);
+            lastHologramUpdate = System.currentTimeMillis();
             
         } catch (Exception e) {
             plugin.getLogger().severe("Erreur lors de la mise à jour de l'hologramme: " + e.getMessage());
@@ -668,55 +579,139 @@ public class GameManager {
     }
     
     /**
-     * Met à jour le contenu de l'hologramme
+     * Met à jour le contenu de l'hologramme avec les scores actuels
+     * @param hologram L'hologramme à mettre à jour
+     */
+    /**
+     * Met à jour le contenu de l'hologramme avec les scores actuels
+     * @param hologram L'hologramme à mettre à jour
      */
     private void updateHologramContent(Hologram hologram) {
-        List<String> lines = new ArrayList<>();
-        
-        // Récupérer les couleurs depuis la config
-        String textColor = "&f";
-        String scoreColor = "&e";
-        String bestScoreColor = "&6&l";
-        
-        if (plugin.getConfig().getBoolean("hologram.style.use-custom-colors", true)) {
-            textColor = plugin.getConfig().getString("hologram.style.text-color", "&f");
-            scoreColor = plugin.getConfig().getString("hologram.style.score-color", "&e");
-            bestScoreColor = plugin.getConfig().getString("hologram.style.best-score-color", "&6&l");
+        try {
+            List<String> lines = new ArrayList<>();
+            ConfigurationSection displaySection = plugin.getConfig().getConfigurationSection("hologram.display");
+            if (displaySection == null) {
+                plugin.getLogger().warning("La section de configuration 'hologram.display' est manquante !");
+                return;
+            }
+            
+            boolean debug = plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false);
+            int lastClicksToShow = displaySection.getInt("last-clicks", 10);
+            
+            // Mettre à jour automatiquement game-lines pour inclure le titre, le texte d'instruction, les clics et le bouton
+            int gameLines = lastClicksToShow + 5; // +5 pour le titre, les 2 lignes de texte, 1 séparation et le bouton
+            plugin.getConfig().set("settings.game-lines", gameLines);
+            if (debug) {
+                plugin.getLogger().info("[DEBUG] Mise à jour de game-lines à " + gameLines + " (last-clicks: " + lastClicksToShow + ")");
+            }
+            
+            // Ajouter le titre personnalisé depuis la configuration
+            String title = displaySection.getString("title", "&c1&7-&e2&7-&a3&7-&7Modo");
+            lines.add(ChatColor.translateAlternateColorCodes('&', title));
+            lines.add(""); // Ligne vide de séparation
+            
+            // Ajouter le texte d'instruction sur deux lignes
+            lines.add(ChatColor.translateAlternateColorCodes('&', "&7Défies les modos en faisant augmenter le score"));
+            lines.add(ChatColor.translateAlternateColorCodes('&', "&7Mais attention, car s'ils passent par là tout est fini !"));
+            lines.add(""); // Ligne vide de séparation
+            
+            // Générer les faux joueurs si nécessaire
+            List<String> mockNames = displaySection.getStringList("mock-names");
+            if (mockNames.isEmpty() && displaySection.getBoolean("enable-mock-names", true)) {
+                mockNames = generateMockNames(lastClicksToShow);
+                displaySection.set("mock-names", mockNames);
+                plugin.saveConfig();
+                if (debug) {
+                    plugin.getLogger().info("[DEBUG] Génération de " + lastClicksToShow + " faux joueurs");
+                }
+            }
+            
+            // Afficher l'historique des clics réels
+            int realEntries = Math.min(clickHistory.size(), lastClicksToShow);
+            int fakeEntriesNeeded = Math.max(0, lastClicksToShow - realEntries);
+            
+            // Afficher les derniers clics (du plus ancien au plus récent)
+            int startIndex = Math.max(0, clickHistory.size() - lastClicksToShow);
+            for (int i = startIndex; i < clickHistory.size(); i++) {
+                Map.Entry<UUID, Map.Entry<Long, Integer>> entry = clickHistory.get(i);
+                UUID playerId = entry.getKey();
+                long clickTime = entry.getValue().getKey();
+                int score = entry.getValue().getValue();
+                boolean isReset = score == -1; // -1 indique une réinitialisation
+                
+                String playerName = "Joueur inconnu";
+                String prefix = "";
+                
+                // Récupérer les informations du joueur
+                Player player = Bukkit.getPlayer(playerId);
+                if (player != null) {
+                    playerName = player.getName();
+                    prefix = getPlayerPrefix(player);
+                } else {
+                    OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerId);
+                    if (offlinePlayer.hasPlayedBefore()) {
+                        playerName = offlinePlayer.getName();
+                    }
+                }
+                
+                // Formater la date
+                String timeStr = new SimpleDateFormat("HH:mm").format(new Date(clickTime));
+                
+                // Créer la ligne formatée selon le type d'action
+                String format = isReset ? 
+                    displaySection.getString("format-reset", "&d%time% &8| &b%prefix% %player% &7a réinitialisé !") :
+                    displaySection.getString("format-click", "&d%time% &8| &6%player% &7monte à &b%score% &b!");
+                
+                String line = ChatColor.translateAlternateColorCodes('&', format
+                    .replace("%time%", timeStr)
+                    .replace("%player%", playerName)
+                    .replace("%prefix%", prefix)
+                    .replace("%score%", String.valueOf(score)));
+                    
+                lines.add(line);
+                
+                if (debug) {
+                    plugin.getLogger().info("[DEBUG] Ajout de l'entrée: " + line);
+                }
+            }
+            
+            // Ajouter les faux joueurs si nécessaire
+            if (fakeEntriesNeeded > 0) {
+                for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
+                    String timeStr = new SimpleDateFormat("HH:mm").format(new Date(System.currentTimeMillis() - (fakeEntriesNeeded - i) * 60000L));
+                    String fakeLine = ChatColor.translateAlternateColorCodes('&', 
+                        displaySection.getString("format-click", "&d%time% &8| &6%player% &7monte à &b%score%&b!")
+                            .replace("%time%", timeStr)
+                            .replace("%player%", mockNames.get(i))
+                            .replace("%score%", String.valueOf((fakeEntriesNeeded - i) * 10)));
+                    lines.add(fakeLine);
+                }
+            }
+            
+            // Ajouter le bouton cliquable directement sous la liste des clics
+            lines.add(ChatColor.translateAlternateColorCodes('&', 
+                displaySection.getString("click-button", "&a[+1]")));
+            
+            // Mettre à jour l'hologramme
+            Location loc = hologram.getLocation();
+            String hologramName = hologram.getName();
+            
+            // Supprimer l'ancien hologramme
+            DHAPI.removeHologram(hologramName);
+            
+            // Créer un nouvel hologramme avec le contenu mis à jour
+            this.hologram = DHAPI.createHologram(hologramName, loc, lines);
+            
+            if (debug) {
+                plugin.getLogger().info("[DEBUG] Hologramme mis à jour avec " + lines.size() + " lignes");
+            }
+            
+        } catch (Exception e) {
+            plugin.getLogger().severe("Erreur lors de la mise à jour du contenu de l'hologramme: " + e.getMessage());
+            if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
+                e.printStackTrace();
+            }
         }
-        
-        // Ajouter l'en-tête avec les couleurs
-        List<String> headerLines = plugin.getConfig().getStringList("hologram.header");
-        for (String line : headerLines) {
-            lines.add(ChatColor.translateAlternateColorCodes('&', line.replace("%text-color%", textColor)));
-        }
-        
-        // Ajouter le score actuel avec la couleur du score
-        lines.add(ChatColor.translateAlternateColorCodes('&', 
-            String.format("%sScore actuel: %s%d", 
-                textColor.replace("&", "§"), 
-                scoreColor.replace("&", "§"), 
-                currentScore)));
-
-        // Ajouter le meilleur score avec la couleur du meilleur score
-        String bestScoreLine = String.format("%sMeilleur score: %s%d", 
-            textColor.replace("&", "§"), 
-            bestScoreColor.replace("&", "§"), 
-            bestScore);
-
-        if (bestPlayerName != null) {
-            bestScoreLine += String.format(" %spar %s%s", 
-                textColor.replace("&", "§"), 
-                bestScoreColor.replace("&", "§"), 
-                bestPlayerName);
-        }
-        lines.add(bestScoreLine);
-
-        // Ajouter le bouton avec les couleurs
-        List<String> buttonLines = plugin.getConfig().getStringList("hologram.button");
-        lines.addAll(buttonLines);
-
-        // Mettre à jour l'hologramme
-        DHAPI.setHologramLines(hologram, lines);
     }
     
     /**
@@ -759,8 +754,116 @@ public class GameManager {
     }
     
     /**
-     * Nettoie les ressources lors de la désactivation du plugin
+     * Récupère le préfixe d'un joueur avec LuckPerms
+     * @param player Le joueur dont on veut le préfixe
+     * @return Le préfixe du joueur ou une chaîne vide si non trouvé
      */
+    private String getPlayerPrefix(Player player) {
+        try {
+            LuckPerms api = LuckPermsProvider.get();
+            CachedMetaData metaData = api.getPlayerAdapter(Player.class).getMetaData(player);
+            String prefix = metaData.getPrefix();
+            return prefix != null ? ChatColor.translateAlternateColorCodes('&', prefix) : "";
+        } catch (Exception e) {
+            plugin.getLogger().warning("Impossible de récupérer le préfixe du joueur: " + e.getMessage());
+            return "";
+        }
+    }
+    
+    /**
+     * Réinitialise le jeu et affiche un message avec l'historique des clics
+     * @param player Le joueur qui réinitialise le jeu
+     */
+    /**
+     * Réinitialise le jeu et affiche un message avec l'historique des clics
+     * @param player Le joueur qui réinitialise le jeu
+     */
+    public void resetGame(Player player) {
+        // Ajouter un message de réinitialisation comme un clic spécial à la fin de la liste
+        clickHistory.add(new AbstractMap.SimpleEntry<>(player.getUniqueId(), 
+            new AbstractMap.SimpleEntry<>(System.currentTimeMillis(), -1)));
+            
+        // Mettre à jour l'hologramme immédiatement
+        updateHologram();
+        
+        // Limiter la taille de l'historique pour éviter les fuites de mémoire
+        while (clickHistory.size() > 1000) {
+            clickHistory.remove(clickHistory.size() - 1);
+        }
+        
+        // Sauvegarder les données actuelles avant réinitialisation
+        int oldBestScore = bestScore;
+        String oldBestPlayer = bestPlayerName;
+        
+        // Réinitialiser les scores
+        currentScore = 0;
+        playerClicks.clear();
+        lastClickTimes.clear();
+        
+        // Restaurer le meilleur score et le meilleur joueur
+        bestScore = oldBestScore;
+        bestPlayerName = oldBestPlayer;
+        
+        // Régénérer les noms factices si nécessaire
+        if (plugin.getConfig().getBoolean("hologram.display.enable-mock-names", true)) {
+            ConfigurationSection displaySection = plugin.getConfig().getConfigurationSection("hologram.display");
+            if (displaySection != null) {
+                int lastClicksToShow = displaySection.getInt("last-clicks", 10);
+                List<String> mockNames = new ArrayList<>();
+                String[] colors = {"&a", "&b", "&c", "&d", "&e", "&f", "&1", "&2", "&3", "&4", "&5", "&6", "&7", "&8", "&9"};
+                
+                for (int i = 0; i < lastClicksToShow; i++) {
+                    String color = colors[i % colors.length];
+                    mockNames.add(color + "Joueur" + (i + 1));
+                }
+                
+                // Ne pas écraser les noms factices personnalisés s'ils existent déjà
+                if (!displaySection.isSet("mock-names")) {
+                    displaySection.set("mock-names", mockNames);
+                    plugin.saveConfig();
+                }
+            }
+        }
+        
+        // Mettre à jour l'hologramme
+        updateHologram();
+        
+        // Sauvegarder les données
+        saveData();
+    }
+    
+    /**
+     * Génère une liste de noms de faux joueurs avec des couleurs aléatoires
+     * @param count Nombre de noms à générer
+     * @return Liste des noms générés
+     */
+    private List<String> generateMockNames(int count) {
+        List<String> names = new ArrayList<>();
+        String[] colors = {"a", "b", "c", "d", "e", "f", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        String[] prefixes = {"Joueur", "Player", "Joueur_"};
+        
+        Random random = new Random();
+        Set<String> usedNames = new HashSet<>();
+        
+        for (int i = 1; i <= count && i <= 100; i++) { // Limite à 100 pour éviter les boucles infinies
+            String color = colors[random.nextInt(colors.length)];
+            String prefix = prefixes[random.nextInt(prefixes.length)];
+            String suffix = random.nextBoolean() ? "" : String.valueOf((char)('A' + random.nextInt(26)));
+            
+            String name = "&" + color + prefix + i + suffix;
+            
+            // S'assurer que le nom est unique
+            if (!usedNames.contains(name)) {
+                usedNames.add(name);
+                names.add(ChatColor.translateAlternateColorCodes('&', name));
+            } else {
+                i--; // Réessayer avec un autre nom
+            }
+        }
+        
+        return names;
+    }
+    
     public void onDisable() {
         // Sauvegarder les données à l'arrêt
         saveData();
