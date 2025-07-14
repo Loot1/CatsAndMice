@@ -1,13 +1,13 @@
-package fr.Eniox59.clickgame;
+package fr.Eniox59.catsandmice;
 
-import fr.Eniox59.clickgame.commands.ClickGameCommand;
-import fr.Eniox59.clickgame.listeners.HologramClickListener;
-import fr.Eniox59.clickgame.managers.GameManager;
+import fr.Eniox59.catsandmice.commands.CatsAndMiceCommand;
+import fr.Eniox59.catsandmice.listeners.HologramClickListener;
+import fr.Eniox59.catsandmice.managers.GameManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class ClickGame extends JavaPlugin {
+public class CatsAndMice extends JavaPlugin {
     
-    private static ClickGame instance;
+    private static CatsAndMice instance;
     private GameManager gameManager;
     
     @Override
@@ -16,7 +16,7 @@ public class ClickGame extends JavaPlugin {
         
         // Message de démarrage
         getLogger().info("");
-        getLogger().info("=== ClickGame v" + getDescription().getVersion() + " ===");
+        getLogger().info("=== CatsAndMice v" + getDescription().getVersion() + " ===");
         getLogger().info("Developpe par " + String.join(", ", getDescription().getAuthors()));
         getLogger().info("");
         
@@ -47,13 +47,13 @@ public class ClickGame extends JavaPlugin {
             this.gameManager = new GameManager(this);
             
             // Enregistrement des commandes
-            getCommand("clickgame").setExecutor(new ClickGameCommand(this));
+            getCommand("mice").setExecutor(new CatsAndMiceCommand(this));
             
             // Enregistrement des événements
             getServer().getPluginManager().registerEvents(new HologramClickListener(this), this);
             
             getLogger().info("Pret a l'emploi !");
-            getLogger().info("Utilisez /clickgame create pour creer un hologramme");
+            getLogger().info("Utilisez /mice create pour creer un hologramme");
             
         } catch (Exception e) {
             getLogger().severe("Erreur lors du chargement: " + e.getMessage());
@@ -64,7 +64,7 @@ public class ClickGame extends JavaPlugin {
     
     @Override
     public void onDisable() {
-        getLogger().info("Arrêt de ClickGame...");
+        getLogger().info("Arrêt de CatsAndMice...");
         
         try {
             // Sauvegarder les données à l'arrêt
@@ -84,7 +84,7 @@ public class ClickGame extends JavaPlugin {
         }
     }
     
-    public static ClickGame getInstance() {
+    public static CatsAndMice getInstance() {
         return instance;
     }
     

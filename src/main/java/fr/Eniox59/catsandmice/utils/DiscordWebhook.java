@@ -1,4 +1,4 @@
-package fr.Eniox59.clickgame.utils;
+package fr.Eniox59.catsandmice.utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,7 +50,7 @@ public class DiscordWebhook {
         HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("User-Agent", "ClickGame-Webhook");
+        connection.setRequestProperty("User-Agent", "CatsAndMice-Webhook");
         connection.setDoOutput(true);
 
         // Envoi des données

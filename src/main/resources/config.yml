@@ -14,7 +14,7 @@ messages:
 # Paramètres du jeu
 settings:
   # Configuration générale
-  game-lines: 13  # Nombre de lignes à afficher dans l'hologramme (géré automatiquement)
+  game-lines: 16  # Nombre de lignes à afficher dans l'hologramme (géré automatiquement)
   click-delay: 300  # Délai entre chaque clic en secondes (5 minutes par défaut)
   time-format: 'HH:mm:ss'  # Format de l'heure pour les messages
   
@@ -31,7 +31,7 @@ settings:
 
 # Configuration de l'hologramme
 hologram:
-  name: 'clickgame_hologram'  # Nom de l'hologramme (doit correspondre au code)
+  name: 'catsandmice_hologram'  # Nom de l'hologramme (doit correspondre au code)
   
   # Position par défaut (mise à jour lors de la création)
   location:
@@ -72,14 +72,14 @@ webhook:
   
   # Messages
   alert-message: |-
-    **🎮 CLICKGAME - 1-2-3-Modo**
+    **🎮 CATS AND MICE - 1-2-3-Modo**
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
     ⏰***Alerte score élevé***
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
     🏆 **Joueur:** %player%
     ⚡ **Score atteint:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  console-alert: '&6[ClickGame] &aAlerte de score: %player% a atteint %score% points'
+  console-alert: '&6[CatsAndMice] &aAlerte de score: %player% a atteint %score% points'
 
 # Optimisations
 optimization:

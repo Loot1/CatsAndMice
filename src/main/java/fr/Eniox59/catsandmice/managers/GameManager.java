@@ -1,7 +1,7 @@
-package fr.Eniox59.clickgame.managers;
+package fr.Eniox59.catsandmice.managers;
 
-import fr.Eniox59.clickgame.ClickGame;
-import fr.Eniox59.clickgame.utils.DiscordWebhook;
+import fr.Eniox59.catsandmice.CatsAndMice;
+import fr.Eniox59.catsandmice.utils.DiscordWebhook;
 
 import java.io.IOException;
 import org.bukkit.ChatColor;
@@ -29,7 +29,7 @@ import eu.decentsoftware.holograms.api.holograms.Hologram;
 
 public class GameManager {
     
-    private final ClickGame plugin;
+    private final CatsAndMice plugin;
     private int currentScore;
     private int bestScore;
     private String bestPlayerName;
@@ -44,6 +44,14 @@ public class GameManager {
     private final ExecutorService threadPool;
     private long lastHologramUpdate = 0;
     private Hologram hologram;
+    
+    /**
+     * Recharge la configuration et met à jour l'hologramme
+     */
+    public void reload() {
+        plugin.reloadConfig();
+        updateHologram();
+    }
     
     /**
      * Charge les données du jeu depuis le fichier de données
@@ -91,7 +99,7 @@ public class GameManager {
         }
     }
     
-    public GameManager(ClickGame plugin) {
+    public GameManager(CatsAndMice plugin) {
         this.plugin = plugin;
         this.playerClicks = new HashMap<>();
         this.lastClickTimes = new HashMap<>();
@@ -131,7 +139,7 @@ public class GameManager {
         if (player == null) return false;
         
         // Vérifier si le joueur a la permission de contourner le délai
-        if (player.hasPermission("clickgame.bypass")) {
+        if (player.hasPermission("catsandmice.bypass")) {
             return true;
         }
         
@@ -159,7 +167,7 @@ public class GameManager {
     public void handleHologramClick(Player player) {
         try {
             // Vérifier si le joueur a la permission de réinitialiser le score
-            if (player.hasPermission("clickgame.reset")) {
+            if (player.hasPermission("catsandmice.reset")) {
                 if (plugin.getConfig().getBoolean("settings.debug.log-clicks", false)) {
                     plugin.getLogger().info(String.format("[DEBUG] %s a demandé une réinitialisation du score", player.getName()));
                 }
@@ -285,7 +293,7 @@ public class GameManager {
                 // Afficher le message dans la console si activé
                 if (plugin.getConfig().getBoolean("webhook.console-message", true)) {
                     String consoleMessage = plugin.getConfig().getString("webhook.console-alert", 
-                        "&6[ClickGame] &aAlerte de score: %player% a atteint %score% points")
+                        "\u00266[CatsAndMice] \u0026aAlerte de score: %player% a atteint %score% points")
                         .replace("%player%", player.getName())
                         .replace("%score%", String.valueOf(currentScore));
                     plugin.getLogger().info(consoleMessage.replace("&", "§"));
@@ -305,7 +313,7 @@ public class GameManager {
                 }
                 
                 // Récupération du message avec une valeur par défaut
-                String defaultMessage = "**🎮 CLICKGAME - NOUVEAU RECORD !**\n" +
+                String defaultMessage = "**🎮 CATS AND MICE - NOUVEAU RECORD !**\n" +
                                      "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                                      "🏆 **Joueur:** %player%\n" +
                                      "⚡ **Score atteint:** %score%\n" +
@@ -373,7 +381,7 @@ public class GameManager {
     public void resetScore(Player player) {
         try {
             // Vérifier la permission
-            if (player != null && !player.hasPermission("clickgame.reset")) {
+            if (player != null && !player.hasPermission("catsandmice.reset")) {
                 player.sendMessage("§cVous n'avez pas la permission de réinitialiser le score !");
                 return;
             }
@@ -409,14 +417,23 @@ public class GameManager {
     public void createHologram(Location location) {
         try {
             // Récupérer le nom de l'hologramme depuis la configuration
-            String hologramName = plugin.getConfig().getString("hologram.name", "clickgame_hologram");
+            String hologramName = plugin.getConfig().getString("hologram.name", "catsandmice_hologram");
+            
+            // Calculer la hauteur en fonction du nombre de lignes configuré (16 par défaut)
+            int gameLines = plugin.getConfig().getInt("settings.game-lines", 16);
+            // Chaque ligne fait environ 0.25 bloc de hauteur, on ajoute un espace supplémentaire
+            double heightOffset = (gameLines * 0.4) + 0.5;
+            
+            // Ajuster la position Y pour que l'hologramme apparaisse à la bonne hauteur
+            Location adjustedLocation = location.clone();
+            adjustedLocation.setY(adjustedLocation.getY() + heightOffset);
             
             // Vérifier si l'hologramme existe déjà
             Hologram existingHologram = DHAPI.getHologram(hologramName);
             
             if (existingHologram != null) {
                 // Mettre à jour la position si l'hologramme existe déjà
-                DHAPI.moveHologram(existingHologram, location);
+                DHAPI.moveHologram(existingHologram, adjustedLocation);
                 if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
                     plugin.getLogger().info("Hologramme deplace avec succes !");
                 }
@@ -433,8 +450,8 @@ public class GameManager {
                     this.hologram.delete();
                 }
                 
-                // Créer le nouvel hologramme
-                this.hologram = DHAPI.createHologram(hologramName, location, false, lines);
+                // Créer le nouvel hologramme à la position ajustée
+                this.hologram = DHAPI.createHologram(hologramName, adjustedLocation, false, lines);
                 
                 if (this.hologram != null) {
                     if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
@@ -447,10 +464,10 @@ public class GameManager {
                 }
             }
             
-            // Sauvegarder la position dans la configuration
+            // Sauvegarder la position d'origine (sans l'ajustement de hauteur) dans la configuration
             plugin.getConfig().set("hologram.location.world", location.getWorld().getName());
             plugin.getConfig().set("hologram.location.x", location.getX());
-            plugin.getConfig().set("hologram.location.y", location.getY());
+            plugin.getConfig().set("hologram.location.y", location.getY()); // Sauvegarder la position Y d'origine
             plugin.getConfig().set("hologram.location.z", location.getZ());
             plugin.getConfig().set("hologram.location.yaw", (double)location.getYaw());
             plugin.getConfig().set("hologram.location.pitch", (double)location.getPitch());
@@ -486,7 +503,7 @@ public class GameManager {
                         x, y, z, yaw, pitch
                     );
                     
-                    // Créer l'hologramme à la position enregistrée
+                    // Créer l'hologramme à la position enregistrée (la méthode createHologram ajustera la hauteur)
                     createHologram(location);
                     
                     if (plugin.getConfig().getBoolean("settings.debug.log-hologram-update", false)) {
@@ -557,7 +574,7 @@ public class GameManager {
                 }
             }
             
-            String hologramName = plugin.getConfig().getString("hologram.name", "clickgame_hologram");
+            String hologramName = plugin.getConfig().getString("hologram.name", "catsandmice_hologram");
             
             // Récupérer l'hologramme existant
             this.hologram = DHAPI.getHologram(hologramName);

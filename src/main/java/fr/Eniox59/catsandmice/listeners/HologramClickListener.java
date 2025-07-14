@@ -1,7 +1,7 @@
-package fr.Eniox59.clickgame.listeners;
+package fr.Eniox59.catsandmice.listeners;
 
-import fr.Eniox59.clickgame.ClickGame;
-import fr.Eniox59.clickgame.managers.GameManager;
+import fr.Eniox59.catsandmice.CatsAndMice;
+import fr.Eniox59.catsandmice.managers.GameManager;
 import eu.decentsoftware.holograms.event.HologramClickEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,10 +10,10 @@ import org.bukkit.event.Listener;
 
 public class HologramClickListener implements Listener {
 
-    private final ClickGame plugin;
+    private final CatsAndMice plugin;
     private final GameManager gameManager;
 
-    public HologramClickListener(ClickGame plugin) {
+    public HologramClickListener(CatsAndMice plugin) {
         this.plugin = plugin;
         this.gameManager = plugin.getGameManager();
     }
@@ -22,7 +22,7 @@ public class HologramClickListener implements Listener {
     public void onHologramClick(HologramClickEvent event) {
         try {
             // Vérifier que l'hologramme est bien celui du jeu
-            if (event.getHologram() == null || !event.getHologram().getName().equalsIgnoreCase("clickgame_hologram")) {
+            if (event.getHologram() == null || !event.getHologram().getName().equalsIgnoreCase("catsandmice_hologram")) {
                 return;
             }
             

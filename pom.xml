@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>fr.Eniox59</groupId>
-    <artifactId>ClickGame</artifactId>
-    <version>V1.0.2-release</version>
+    <artifactId>CatsAndMice</artifactId>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
-    <name>ClickGame</name>
+    <name>CatsAndMice</name>
     <description>Un plugin Minecraft 1 2 3 modo avec hologramme pour Minecraft France</description>
 
     <properties>

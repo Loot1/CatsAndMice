@@ -1,4 +1,4 @@
-# 🐭 1-2-3 Modo - Plugin Minecraft
+# CatsAndMice - Plugin Minecraft
 
 Un plugin interactif pour les serveurs Minecraft qui permet aux joueurs de participer à un jeu de clics compétitif avec affichage des scores en temps réel via un hologramme. Parfait pour les événements communautaires et les animations de serveur.
 
@@ -35,28 +35,28 @@ Un plugin interactif pour les serveurs Minecraft qui permet aux joueurs de parti
 1. Téléchargez la dernière version du plugin
 2. Placez le fichier JAR dans le dossier `plugins`
 3. Démarrez/Redémarrez votre serveur
-4. Utilisez la commande `/clickgame create` pour créer l'hologramme
-5. Configurez le plugin via `plugins/ClickGame/config.yml`
+4. Utilisez la commande `/mice create` pour créer l'hologramme
+5. Configurez le plugin via `plugins/CatsAndMice/config.yml`
 
 ## ⚙️ Configuration
 
 ### Fichiers principaux
-- `plugins/ClickGame/config.yml` - Configuration générale
-- `plugins/ClickGame/data.yml` - Sauvegarde des données
+- `plugins/CatsAndMice/config.yml` - Configuration générale
+- `plugins/CatsAndMice/data.yml` - Sauvegarde des données
 
 ### Commandes
 | Commande | Permission | Description |
 |----------|------------|-------------|
-| `/clickgame create` | `clickgame.command` | Crée un nouvel hologramme |
-| `/clickgame reload` | `clickgame.command` | Recharge la configuration |
+| `/mice create` | `catsandmice.command` | Crée un nouvel hologramme |
+| `/mice reload` | `catsandmice.command` | Recharge la configuration |
 
 ### Permissions
 | Permission | Description |
 |------------|-------------|
-| `clickgame.command` | Accès aux commandes du plugin |
-| `clickgame.bypass` | Contourne le délai entre les clics que pour les joueurs |
-| `clickgame.reset` | Permet de réinitialiser le score |
-| `clickgame.*` | Donne accès à toutes les fonctionnalités |
+| `catsandmice.command` | Accès aux commandes du plugin |
+| `catsandmice.bypass` | Contourne le délai entre les clics que pour les joueurs |
+| `catsandmice.reset` | Permet de réinitialiser le score |
+| `catsandmice.*` | Donne accès à toutes les fonctionnalités |
 
 ## 🎨 Personnalisation
 
@@ -93,8 +93,15 @@ Tous les messages sont personnalisables dans le fichier de configuration, notamm
 4. Personnalisez le message d'alerte
 
 ## 📅 Version
-**Dernière version** : 1.0.2  
-**Dernière mise à jour** : 11/07/2025
+**Dernière version** : 1.0.3  
+**Dernière mise à jour** : 14/07/2025
+
+### Notes de version
+- **1.0.3** : 
+  - Changement de la commande principale de `/catsandmice` à `/mice`
+  - Amélioration du positionnement automatique de l'hologramme
+  - Correction de bugs mineurs
+  - Mise à jour de la documentation
    - Activez les webhooks : `webhook.enabled: true`
    - Collez votre URL de webhook : `webhook.url: 'https://discord.com/api/webhooks/...'`
    - Définissez le seuil de score pour les alertes : `webhook.threshold: 100`
@@ -111,7 +118,7 @@ webhook:
   mention-enabled: true
   mention: '@everyone'
   alert-message: |-
-    **🎮 CLICKGAME - 1-2-3-Modo**
+    **🎮 CATS AND MICE - 1-2-3-Modo**
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
     ⏰***Alerte score élevé***
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
