@@ -4,72 +4,47 @@ messages:
     permission-denied: '&cVous n''avez pas la permission.'
     console-sender: '&cCette commande n''est pas utilisable depuis la console.'
     no-permission: '&cVous n''avez pas la permission de faire cela !'
-    
+    click-cooldown: '&cVous devez attendre encore %time% secondes avant de pouvoir cliquer à nouveau !'
+    already-reset: '&cLe score a déjà été réinitialisé !'
+  help:
+    - '§6=== §eAide de CatsAndMice §6==='
+    - '§6/mice create §f- Crée un nouvel hologramme de jeu'
+    - '§6/mice reload §f- Recharge la configuration'
   success:
-    score-reset: '&aLe score a été réinitialisé ! Dernier meilleur score : &e%best_score% &apar &6%best_player%'
-    config-reloaded: '&aConfiguration rechargée avec succès !'
-    hologram-created: '&aHologramme créé avec succès !'
-    click-registered: '&a+1 point ! Score actuel : &e%current_score%'
+    hologram-created: '&7Hologramme créé.'
+    configuration-reload: '&7Configuration rechargée.'
+    clicked: '&7Vous avez augmenté le score à &b%score%&7 !'
+    score-reset: '&7Vous avez réinitialisé le score, il était à &b%score%&7 !'
+    new-best-score: '&7Nouveau meilleur score au &c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo&r&7 par &6%player%&7 : &b%score%&7 !'
+  hologram:
+    title: '&c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo'
+    top-description:
+      - ''
+      - '&7Défies les modos en faisant augmenter le score'
+      - '&7Mais attention, car s''ils passent par là tout est fini !'
+      - ''
+    click: '&d%time% &8| &6%player% &7monte à &b%score%&b!'
+    reset: '&d%time% &8| &b%prefix%%player%&7 a réinitialisé !'
+    click-button: '&a[+1]'
+    sub-description: []
 
 # Paramètres du jeu
 settings:
-  # Configuration générale
-  game-lines: 16  # Nombre de lignes à afficher dans l'hologramme (géré automatiquement)
-  click-delay: 300  # Délai entre chaque clic en secondes (5 minutes par défaut)
+  hologram-name: 'catsandmice_hologram'  # Nom de l'hologramme (doit correspondre au code)
+  last-clicks: 10   # Nombre de lignes de clics à afficher (vrais ou faux joueurs)
+  click-delay: 300   # Délai entre chaque clic en secondes (5 minutes par défaut)
   time-format: 'HH:mm:ss'  # Format de l'heure pour les messages
-  
-  # Messages
-  new-best-score: '&6Nouveau meilleur score : %score% !'
-  wait-message: '§6Veuillez patienter §e%time% §6secondes avant de pouvoir cliquer à nouveau.'
-  
-  # Logs
-  debug:
-    log-clicks: false  # Afficher les logs détaillés pour chaque clic
-    log-hologram-update: false  # Afficher les logs de mise à jour de l'hologramme
-    log-records: false  # Afficher les logs des records dans le chat
-    enable-debug-logs: false  # Active les logs détaillés pour le débogage
-
-# Configuration de l'hologramme
-hologram:
-  name: 'catsandmice_hologram'  # Nom de l'hologramme (doit correspondre au code)
-  
-  # Position par défaut (mise à jour lors de la création)
-  location:
-    world: 'world'
-    x: 0
-    y: 100
-    z: 0
-  
-  # Configuration de l'affichage
-  display:
-    # Configuration des faux joueurs
-    enable-mock-names: true
-    last-clicks: 10  # Nombre de lignes de clics à afficher (vrais ou faux joueurs)
-    
-    # Formats d'affichage
-    format-click: '&d%time% &8| &6%player% &7monte à &b%score%&b!'
-    format-reset: '&d%time% &8| &b%prefix%%player% &7a réinitialisé !'
-    
-    # Bouton de clic
-    click-button: '&a[+1]'  # Texte du bouton de clic
-    
-    # Liste des noms factices (sera générée automatiquement)
-    mock-names: []
-    
-    # Titre de l'hologramme (support des codes de couleur avec &)
-    title: '&c1&7-&e2&7-&a3&7-&7Modo'
-    
-
+  enable-mock-names: true   # Faux joueurs
+  notify-new-best-score: true   # Notifier les joueurs lorsqu'un nouveau meilleur score est atteint
 
 # Configuration du webhook Discord
 webhook:
-  enabled: false  # Activer/désactiver les notifications
-  console-message: false  # Afficher les alertes dans la console
-  url: 'https://discord.com/api/webhooks/votre_webhook_ici' 
-  threshold: 100  # Seuil pour déclencher l'alerte
-  mention: ''  # Mention à ajouter (@everyone, @here, <@&ROLE_ID>)
-  mention-enabled: false  # Activer/désactiver les mentions
-  
+  enabled: true # Activer/désactiver les notifications
+  console-message: true # Afficher les alertes dans la console
+  url: https://discord.com/api/webhooks/1400149876523794493/5LNTKKyZy2TrVdsluvyo5RPCAE84qoBixUySg9zn9L_rDlY4E6THqMdzrpI6lRWuDNGW
+  threshold: 10 # Seuil pour déclencher l'alerte
+  mention: '' # Mention à ajouter (@everyone, @here, <@&ROLE_ID>)
+
   # Messages
   alert-message: |-
     **🎮 CATS AND MICE - 1-2-3-Modo**
@@ -80,32 +55,3 @@ webhook:
     ⚡ **Score atteint:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
   console-alert: '&6[CatsAndMice] &aAlerte de score: %player% a atteint %score% points'
-
-# Optimisations
-optimization:
-  # Active la mise en cache des messages pour améliorer les performances
-  # - true: Les messages sont chargés une seule fois au démarrage évite de recharger le message a chaque fois et évite 
-  # la demande d'accès au disques et améliore la réactivité du serveur.(recommandé)
-  # - false: Les messages sont lus depuis le fichier à chaque utilisation (pour le débogage)
-  enable-message-caching: true
-
-
-  enable-hologram-update-throttling: true  # active le temp minimum entre les mises a jour
-  # Délai minimum entre les mises à jour (en ms)
-  hologram-update-delay: 200
-
-
-  # Active ou désactive le pool de threads pour les tâches asynchrones comme les webhooks.
-  # - true: Les tâches sont gérées par un pool de threads (recommandé pour les serveurs avec beaucoup de joueurs)
-  # - false: Chaque tâche crée son propre thread (peut causer des problèmes de performance)
-  enable-thread-pool: true # Uniquement pour les webhooks et rejoins si un problème de permssions donné au joueur sans faire exprès.
-  # nombre de threads maximum en même temps empeche un grand nombre de tâches de se faire en même temps au lei de ralentir le 
-  # serveur il y'a aura que le plugin qui va ramer.
-  max-thread-pool-size: 10  
-  # Délai avant arrêt du plugin qaund on arrête le serveur évite que les tâches en cour ne soient perdues ou créées des erreurs.
-  thread-pool-shutdown-timeout: 5 #(en secondes)
-
-
-  # Intervalle de sauvegarde automatique permet d'éviter les surcharges inutiles (par défaut 2 minutes)
-  # mais problème si le server crash juste après un clique il ne sera pas sauvegarder (secondes, 0=désactivé)
-  auto-save-interval: 120
