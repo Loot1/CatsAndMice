@@ -1,59 +1,71 @@
-# Messages du plugin
+# Plugin messages
 messages:
   errors:
-    permission-denied: '&cVous n''avez pas la permission.'
-    console-sender: '&cCette commande n''est pas utilisable depuis la console.'
-    click-cooldown: '&cVous devez attendre encore %time% secondes avant de pouvoir cliquer à nouveau !'
-    already-reset: '&cLe score a déjà été réinitialisé !'
+    permission-denied: '&cYou do not have permission to do this.'
+    console-sender: '&cThis command cannot be used from the console.'
+    # %time% : remaining seconds before next click
+    click-cooldown: '&cYou must wait %time% more seconds before clicking again!'
+    already-reset: '&cThe score has already been reset!'
   help:
-    - '§6=== §eAide de CatsAndMice §6==='
-    - '§6/mice create §f- Crée un nouvel hologramme de jeu'
-    - '§6/mice reload §f- Recharge la configuration'
+    - '§6=== §eCatsAndMice Help §6==='
+    - '§6/mice create §f- Creates a new game hologram'
+    - '§6/mice reload §f- Reloads the configuration'
   success:
-    hologram-created: '&7Hologramme créé.'
-    configuration-reload: '&7Configuration rechargée.'
-    clicked: '&7Vous avez augmenté le score à &b%score%&7 !'
-    score-reset: '&7Vous avez réinitialisé le score, il était à &b%score%&7 !'
-    new-best-score: '&7Nouveau meilleur score au &c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo&r&7 par &6%player%&7 : &b%score%&7 !'
+    hologram-created: '&7Hologram created.'
+    configuration-reload: '&7Configuration reloaded.'
+    # %score% : new score value
+    clicked: '&7You increased the score to &b%score%&7!'
+    # %score% : score value before reset
+    score-reset: '&7You reset the score, it was at &b%score%&7!'
+    # %player% : player name | %score% : best score value
+    new-best-score: '&7New best score at &c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo&r&7 by &6%player%&7: &b%score%&7!'
   hologram:
     title: '&c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo'
+    # %player% : best score player name | %score% : best score value
+    # %prefix% : LuckPerms prefix | %time% : best score time | %day% : best score date (dd/MM/yyyy)
     top-description:
       - ''
-      - '&7Défies les modos en faisant augmenter le score'
-      - '&7Mais attention, car s''ils passent par là tout est fini !'
+      - '&7Challenge the mods by increasing the score'
+      - '&7But be careful, if they come by, it''s all over!'
       - ''
-      - '&7Meilleur score par &6%player%&7 avec &b%score%&7 le &d%day%&7 à &d%time% &7!'
+      - '&7Best score by &6%player%&7 with &b%score%&7 on &d%day%&7 at &d%time% &7!'
       - ''
-    click: '&d%time% &8| &6%player% &7monte à &b%score%&b!'
-    reset: '&d%time% &8| &b%prefix%%player%&7 a réinitialisé !'
+    # %time% : click time | %player% : player name | %prefix% : LuckPerms prefix | %score% : score at click
+    click: '&d%time% &8| &6%player% &7reaches &b%score%&b!'
+    # %time% : reset time | %player% : player name | %prefix% : LuckPerms prefix
+    reset: '&d%time% &8| &b%prefix%%player%&7 has reset!'
     click-button: '&a[+1]'
+    # %player% : best score player name | %score% : best score value
+    # %prefix% : LuckPerms prefix | %time% : best score time | %day% : best score date (dd/MM/yyyy)
     sub-description: []
 
-# Paramètres du jeu
+# Game settings
 settings:
-  hologram-name: 'catsandmice_hologram'  # Nom de l'hologramme (doit correspondre au code)
-  last-clicks: 10   # Nombre de lignes de clics à afficher (vrais ou faux joueurs)
-  click-delay: 300   # Délai entre chaque clic en secondes (5 minutes par défaut)
-  time-format: 'HH:mm'  # Format de l'heure pour les messages (ex: HH:mm, HH:mm:ss)
-  enable-mock-names: true   # Faux joueurs
-  notify-new-best-score: true   # Notifier les joueurs lorsqu'un nouveau meilleur score est atteint
-  recent-on-bottom: true   # Afficher le clic le plus récent en bas (true) ou en haut (false)
+  hologram-name: 'catsandmice_hologram'  # Hologram name (must match the code)
+  last-clicks: 10   # Number of click lines to display (real or fake players)
+  click-delay: 300   # Delay between each click in seconds (5 minutes by default)
+  time-format: 'HH:mm'  # Time format for messages (e.g. HH:mm, HH:mm:ss)
+  enable-mock-names: true   # Enable fake players
+  notify-new-best-score: true   # Notify players when a new best score is reached
+  recent-on-bottom: true   # Display the most recent click at the bottom (true) or top (false)
 
-# Configuration du webhook Discord
+# Discord webhook configuration
 webhook:
-  enabled: true # Activer/désactiver les notifications
-  console-message: true # Afficher les alertes dans la console
-  url: https://discord.com/api/webhooks/1400149876523794493/5LNTKKyZy2TrVdsluvyo5RPCAE84qoBixUySg9zn9L_rDlY4E6THqMdzrpI6lRWuDNGW
-  threshold: 10 # Seuil pour déclencher l'alerte
-  mention: '' # Mention à ajouter (@everyone, @here, <@&ROLE_ID>)
+  enabled: true # Enable/disable notifications
+  console-message: true # Display alerts in the console
+  url: 'https://discord.com/api/webhooks/your_webhook_here'
+  threshold: 10 # Score threshold to trigger the alert
+  mention: '' # Mention to add (@everyone, @here, <@&ROLE_ID>)
 
   # Messages
+  # %player% : player name | %score% : score that triggered the alert
   alert-message: |-
     **🎮 CATS AND MICE - 1-2-3-Modo**
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    ⏰***Alerte score élevé***
+    ⏰***High score alert***
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    🏆 **Joueur:** %player%
-    ⚡ **Score atteint:** %score%
+    🏆 **Player:** %player%
+    ⚡ **Score reached:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  console-alert: '&6[CatsAndMice] &aAlerte de score: %player% a atteint %score% points'
+  # %player% : player name | %score% : score that triggered the alert
+  console-alert: '&6[CatsAndMice] &aScore alert: %player% has reached %score% points'
