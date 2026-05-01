@@ -1,0 +1,74 @@
+[CENTER][SIZE=6][B]🐱 CatsAndMice - Red light, green light with moderators[/B][/SIZE]
+[SIZE=4]A competitive click game for your Minecraft server[/SIZE][/CENTER]
+
+[CENTER][IMG]https://raw.githubusercontent.com/Loot1/CatsAndMice/master/.github/assets/image.png[/IMG][/CENTER]
+
+[SIZE=5][B]📖 What is CatsAndMice?[/B][/SIZE]
+
+CatsAndMice is a Minecraft adaptation of the original [URL='https://github.com/Seblor/Cats-n-Mice']Cats-n-Mice Discord bot[/URL] by [B]Seblor[/B].
+
+Players click a hologram to increase a shared score. Moderators (cats 🐱) can reset the score at any time — the goal for players (mice 🐭) is to reach the highest score possible before it gets wiped! The current score and last clicks are displayed in real-time on a clickable hologram.
+
+[SIZE=5][B]✨ Features[/B][/SIZE]
+[LIST]
+[*][B]Clickable hologram[/B] — real-time leaderboard powered by DecentHolograms
+[*][B]Role-based gameplay[/B] — mice click to increase the score, cats reset it
+[*][B]Click cooldown[/B] — configurable delay between each click (default: 5 minutes)
+[*][B]Best score tracking[/B] — records the best score with the player name, date and time
+[*][B]Mock (fake) player names[/B] — automatically fills empty hologram slots to keep the display full
+[*][B]Configurable display order[/B] — most recent click at the bottom or at the top
+[*][B]LuckPerms support[/B] — displays rank prefixes next to player names in the hologram
+[*][B]Discord webhook alerts[/B] — sends a notification when a score threshold is reached
+[*][B]Fully customizable[/B] — every message, color and setting is configurable in [ICODE]config.yml[/ICODE]
+[*][B]Async data saving[/B] — click history and hologram location are saved automatically
+[/LIST]
+
+[SIZE=5][B]🚀 Installation[/B][/SIZE]
+[LIST=1]
+[*]Make sure [URL='https://www.spigotmc.org/resources/96927/']DecentHolograms[/URL] is installed on your server
+[*]Download the [B]CatsAndMice[/B] JAR and place it in your [ICODE]plugins/[/ICODE] folder
+[*]Start or restart your server
+[*]Stand where you want the hologram and run [ICODE]/mice create[/ICODE]
+[*]Edit [ICODE]plugins/CatsAndMice/config.yml[/ICODE] to customize messages and settings
+[*]Run [ICODE]/mice reload[/ICODE] to apply your changes
+[/LIST]
+
+[SIZE=5][B]⚙️ Commands & Permissions[/B][/SIZE]
+[B]Commands:[/B]
+[LIST]
+[*][ICODE]/mice create[/ICODE] — Creates the game hologram at your location ([ICODE]catsandmice.create[/ICODE])
+[*][ICODE]/mice reload[/ICODE] — Reloads the configuration ([ICODE]catsandmice.reload[/ICODE])
+[*][ICODE]/mice help[/ICODE] — Displays the help menu ([ICODE]catsandmice.help[/ICODE])
+[/LIST]
+
+[B]Permissions:[/B]
+[LIST]
+[*][ICODE]catsandmice.mice[/ICODE] — Allows clicking the hologram to increase the score
+[*][ICODE]catsandmice.cat[/ICODE] — Allows clicking the hologram to reset the score
+[*][ICODE]catsandmice.bypass[/ICODE] — Bypasses the click cooldown delay
+[*][ICODE]catsandmice.*[/ICODE] — Grants all plugin permissions (OP by default)
+[/LIST]
+
+[SIZE=5][B]🔗 Discord Webhook (optional)[/B][/SIZE]
+
+CatsAndMice can send an alert to a Discord channel when the score reaches a configurable threshold.
+[LIST=1]
+[*]Create a webhook in your Discord channel settings
+[*]Set [ICODE]webhook.enabled: true[/ICODE] in [ICODE]config.yml[/ICODE]
+[*]Paste your webhook URL in [ICODE]webhook.url[/ICODE]
+[*]Set your score threshold with [ICODE]webhook.threshold[/ICODE]
+[/LIST]
+
+[SIZE=5][B]📦 Dependencies[/B][/SIZE]
+[LIST]
+[*][URL='https://www.spigotmc.org/resources/96927/'][B]DecentHolograms[/B][/URL] — [COLOR=Red]Required[/COLOR]
+[*][URL='https://luckperms.net/'][B]LuckPerms[/B][/URL] — [COLOR=Gray]Optional[/COLOR] (for rank prefix display in hologram)
+[/LIST]
+[B]Server:[/B] Spigot / Paper 1.20.6 or higher — [B]Java 17+[/B]
+
+[SIZE=5][B]👥 Credits[/B][/SIZE]
+[LIST]
+[*][B]Original idea & Discord bot[/B] — [URL='https://github.com/Seblor/Cats-n-Mice']Seblor[/URL]
+[*][B]First Minecraft plugin version[/B] — [URL='https://github.com/Eniox5']Eniox59[/URL]
+[*][B]Plugin completion & final work[/B] — Loot1
+[/LIST]
