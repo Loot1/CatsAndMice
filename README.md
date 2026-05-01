@@ -2,6 +2,8 @@
 
 An interactive plugin for Minecraft servers that lets players participate in a competitive click game with real-time score display via a clickable hologram. Perfect for community events and server animations.
 
+![CatsAndMice preview](.github/assets/image.png)
+
 ## 📋 Features
 
 ### 🎮 Game System
