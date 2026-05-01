@@ -6,6 +6,7 @@ import fr.loot1.catsandmice.managers.DataFileManager;
 import fr.loot1.catsandmice.managers.ConfigManager;
 import fr.loot1.catsandmice.managers.GameManager;
 import fr.loot1.catsandmice.managers.HologramManager;
+import fr.loot1.catsandmice.utils.RanksHelper;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -46,6 +47,7 @@ public class CatsAndMice extends JavaPlugin {
     private DataFileManager dataFileManager;
     private GameManager gameManager;
     private HologramManager hologramManager;
+    private RanksHelper ranksHelper;
 
     @Override
     public void onEnable() {
@@ -58,15 +60,21 @@ public class CatsAndMice extends JavaPlugin {
             return;
         }
 
-        hologramManager = new HologramManager(this);
+        ranksHelper = new RanksHelper();
+        hologramManager = new HologramManager(this, ranksHelper);
         gameManager = new GameManager(this, hologramManager);
 
         getCommand("mice").setExecutor(new CatsAndMiceCommand(this));
         getServer().getPluginManager().registerEvents(new HologramClickListener(this), this);
     }
-    
+
     @Override
-    public void onDisable() {}
+    public void onDisable() {
+        if (dataFileManager != null) {
+            dataFileManager.saveSync();
+            getLogger().info("Données sauvegardées.");
+        }
+    }
 
     public ConfigManager getConfigManager() { return configManager; }
 
@@ -75,5 +83,7 @@ public class CatsAndMice extends JavaPlugin {
     public GameManager getGameManager() { return gameManager; }
 
     public HologramManager getHologramManager() { return hologramManager; }
+
+    public RanksHelper getRanksHelper() { return ranksHelper; }
 
 }

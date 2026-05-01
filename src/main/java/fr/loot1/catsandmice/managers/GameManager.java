@@ -19,6 +19,7 @@ public class GameManager {
     private final List<Click> clicks;
     private Click lastClick;
     private Click lastBestClick;
+    private int lastClicksToShow;
 
     public GameManager(CatsAndMice catsAndMice, HologramManager hologramManager) {
         this.main = catsAndMice;
@@ -26,23 +27,32 @@ public class GameManager {
         this.dataFileManager = catsAndMice.getDataFileManager();
         this.hologramManager = hologramManager;
 
+        this.lastClicksToShow = configManager.getInt("settings.last-clicks");
         this.clicks = dataFileManager.getClicks("clicks");
         this.lastClick = clicks.stream()
                 .max(Comparator.comparingLong(Click::getDate))
                 .orElse(null);
         this.lastBestClick = clicks.stream()
+                .filter(c -> c.getScore() > 0)
                 .max(Comparator.comparingInt(Click::getScore))
                 .orElse(null);
 
-        hologramManager.init(getLastClicks());
+        hologramManager.init(getLastClicks(), lastBestClick);
+    }
+
+    public void refreshSettings() {
+        this.lastClicksToShow = configManager.getInt("settings.last-clicks");
     }
 
     public Click getLastClick() {
         return lastClick;
     }
 
+    public Click getLastBestClick() {
+        return lastBestClick;
+    }
+
     public List<Click> getLastClicks() {
-        int lastClicksToShow = configManager.getInt("settings.last-clicks");
         return clicks.stream()
                 .sorted(Comparator.comparingLong(Click::getDate).reversed())
                 .limit(lastClicksToShow)
@@ -58,7 +68,7 @@ public class GameManager {
         lastClick = newClick;
         dataFileManager.updateClicks("clicks", clicks);
 
-        hologramManager.update(getLastClicks());
+        hologramManager.update(getLastClicks(), lastBestClick);
         checkScoreAlert(player);
         player.sendMessage(configManager.getColoredReplaced(
                 "messages.success.clicked",
@@ -126,7 +136,7 @@ public class GameManager {
         lastClick = newClick;
         dataFileManager.updateClicks("clicks", clicks);
 
-        hologramManager.update(getLastClicks());
+        hologramManager.update(getLastClicks(), lastBestClick);
 
         player.sendMessage(configManager.getColoredReplaced(
                 "messages.success.score-reset",
@@ -135,3 +145,4 @@ public class GameManager {
     }
 
 }
+

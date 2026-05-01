@@ -3,7 +3,6 @@ messages:
   errors:
     permission-denied: '&cVous n''avez pas la permission.'
     console-sender: '&cCette commande n''est pas utilisable depuis la console.'
-    no-permission: '&cVous n''avez pas la permission de faire cela !'
     click-cooldown: '&cVous devez attendre encore %time% secondes avant de pouvoir cliquer à nouveau !'
     already-reset: '&cLe score a déjà été réinitialisé !'
   help:
@@ -23,6 +22,8 @@ messages:
       - '&7Défies les modos en faisant augmenter le score'
       - '&7Mais attention, car s''ils passent par là tout est fini !'
       - ''
+      - '&7Meilleur score par &6%player%&7 avec &b%score%&7 le &d%day%&7 à &d%time% &7!'
+      - ''
     click: '&d%time% &8| &6%player% &7monte à &b%score%&b!'
     reset: '&d%time% &8| &b%prefix%%player%&7 a réinitialisé !'
     click-button: '&a[+1]'
@@ -33,9 +34,10 @@ settings:
   hologram-name: 'catsandmice_hologram'  # Nom de l'hologramme (doit correspondre au code)
   last-clicks: 10   # Nombre de lignes de clics à afficher (vrais ou faux joueurs)
   click-delay: 300   # Délai entre chaque clic en secondes (5 minutes par défaut)
-  time-format: 'HH:mm:ss'  # Format de l'heure pour les messages
+  time-format: 'HH:mm'  # Format de l'heure pour les messages (ex: HH:mm, HH:mm:ss)
   enable-mock-names: true   # Faux joueurs
   notify-new-best-score: true   # Notifier les joueurs lorsqu'un nouveau meilleur score est atteint
+  recent-on-bottom: true   # Afficher le clic le plus récent en bas (true) ou en haut (false)
 
 # Configuration du webhook Discord
 webhook:

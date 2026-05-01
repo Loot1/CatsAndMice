@@ -47,7 +47,7 @@ public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
                 case "create":
                     if (sender.hasPermission("catsandmice.create")) {
                         if(sender instanceof Player player) {
-                            hologramManager.create(player.getLocation(), gameManager.getLastClicks());
+                            hologramManager.create(player.getLocation(), gameManager.getLastClicks(), gameManager.getLastBestClick());
                             sender.sendMessage(configManager.getColored("messages.success.hologram-created"));
                         } else {
                             sender.sendMessage(configManager.getColored("messages.errors.console-sender"));
@@ -59,7 +59,9 @@ public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
                 case "reload":
                     if (sender.hasPermission("catsandmice.reload")) {
                         configManager.reload();
-                        hologramManager.update(gameManager.getLastClicks());
+                        gameManager.refreshSettings();
+                        hologramManager.refreshSettings();
+                        hologramManager.update(gameManager.getLastClicks(), gameManager.getLastBestClick());
                         sender.sendMessage(configManager.getColored("messages.success.configuration-reload"));
                     } else {
                         sender.sendMessage(configManager.getColored("messages.errors.permission-denied"));

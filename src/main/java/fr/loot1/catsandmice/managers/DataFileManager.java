@@ -16,6 +16,7 @@ public class DataFileManager {
     private final File configFile;
     private YamlConfiguration config;
     private final String name;
+    private final Object lock = new Object();
 
     public DataFileManager(CatsAndMice catsAndMice, String name) {
         this.main = catsAndMice;
@@ -38,20 +39,34 @@ public class DataFileManager {
 
     private void save() {
         main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
-            try {
-                config.save(configFile);
-            } catch (IOException e) {
-                main.getLogger().severe("Erreur lors de la sauvegarde de " + name + " : " + e.getMessage());
+            synchronized (lock) {
+                try {
+                    config.save(configFile);
+                } catch (IOException e) {
+                    main.getLogger().severe("Erreur lors de la sauvegarde de " + name + " : " + e.getMessage());
+                }
             }
         });
     }
 
+    public void saveSync() {
+        synchronized (lock) {
+            try {
+                config.save(configFile);
+            } catch (IOException e) {
+                main.getLogger().severe("Erreur lors de la sauvegarde finale de " + name + " : " + e.getMessage());
+            }
+        }
+    }
+
     public void reload() {
-        config = new YamlConfiguration();
-        try {
-            config.load(configFile);
-        } catch (IOException | InvalidConfigurationException e) {
-            main.getLogger().severe("Erreur lors du chargement de " + name + " : " + e.getMessage());
+        synchronized (lock) {
+            config = new YamlConfiguration();
+            try {
+                config.load(configFile);
+            } catch (IOException | InvalidConfigurationException e) {
+                main.getLogger().severe("Erreur lors du chargement de " + name + " : " + e.getMessage());
+            }
         }
     }
 
@@ -72,7 +87,9 @@ public class DataFileManager {
     }
 
     public void set(String path, Object value) {
-        config.set(path, value);
+        synchronized (lock) {
+            config.set(path, value);
+        }
         save();
     }
 
@@ -102,7 +119,9 @@ public class DataFileManager {
             map.put("score", click.getScore());
             serializedClicks.add(map);
         }
-        config.set(path, serializedClicks);
+        synchronized (lock) {
+            config.set(path, serializedClicks);
+        }
         save();
     }
 

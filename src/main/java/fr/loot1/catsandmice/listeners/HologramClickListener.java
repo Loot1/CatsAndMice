@@ -32,28 +32,21 @@ public class HologramClickListener implements Listener {
                     player.sendMessage(configManager.getColored("messages.errors.already-reset"));
                 }
             } else if(player.hasPermission("catsandmice.mice")) {
-                if (player.hasPermission("catsandmice.bypass")) {
-                    gameManager.addScore(player);
-                } else {
-                    long currentTime = System.currentTimeMillis();
+                if (!player.hasPermission("catsandmice.bypass")) {
                     Click lastClick = gameManager.getLastClick();
-                    if(lastClick == null || lastClick.getScore() == 0) {
-                        gameManager.addScore(player);
-                    } else {
-                        long lastClickTime = lastClick.getDate();
+                    if (lastClick != null && lastClick.getScore() != 0) {
+                        long elapsed = System.currentTimeMillis() - lastClick.getDate();
                         long clickDelay = configManager.getLong("settings.click-delay") * 1000L;
-                        if (currentTime - lastClickTime < clickDelay) {
-                            long timeLeft = (clickDelay - (currentTime - lastClickTime)) / 1000;
-                            if (timeLeft > 0) {
-                                player.sendMessage(configManager.getColoredReplaced("messages.errors.click-cooldown", new String[]{"time"}, new String[]{String.valueOf(timeLeft)}));
-                            } else {
-                                gameManager.addScore(player);
-                            }
-                        } else {
-                            gameManager.addScore(player);
+                        if (elapsed < clickDelay) {
+                            long timeLeft = (clickDelay - elapsed) / 1000;
+                            player.sendMessage(configManager.getColoredReplaced(
+                                    "messages.errors.click-cooldown",
+                                    new String[]{"time"}, new String[]{String.valueOf(timeLeft)}));
+                            return;
                         }
                     }
                 }
+                gameManager.addScore(player);
             } else {
                 player.sendMessage(configManager.getColored("messages.errors.permission-denied"));
             }
