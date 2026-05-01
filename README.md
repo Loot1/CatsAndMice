@@ -146,23 +146,6 @@ src/main/java/fr/loot1/catsandmice/
     └── RanksHelper.java           # LuckPerms prefix helper
 ```
 
-## 📅 Version
-
-**Latest version**: 1.0.4
-**Last updated**: 01/05/2026
-
-### Changelog
-- **1.0.4**:
-  - Added `recent-on-bottom` setting for hologram display order
-  - Added day formatter (`dd/MM/yyyy`) on best score display
-  - Added mock name generation with unique color codes
-  - Improved hologram height auto-adjustment on creation
-  - Code cleanup and full English translation
-- **1.0.3**:
-  - Changed main command from `/catsandmice` to `/mice`
-  - Improved automatic hologram positioning
-  - Minor bug fixes
-
 ## Dependencies
 
 | Dependency | Type | Link |
@@ -174,10 +157,10 @@ src/main/java/fr/loot1/catsandmice/
 
 ## Authors
 
-| Role | Author |
-|------|--------|
+| Role | Author                                              |
+|------|-----------------------------------------------------|
 | Original idea & initial Discord bot | [**Seblor**](https://github.com/Seblor/Cats-n-Mice) |
-| First Minecraft plugin version | **Eniox59** |
-| Plugin completion & final work | **Loot1** |
+| First Minecraft plugin version | [**Eniox59**](https://github.com/Eniox5)            |
+| Plugin completion & final work | **Loot1**                                           |
 
 > ⚠️ This plugin is a Minecraft adaptation of **[Cats-n-Mice](https://github.com/Seblor/Cats-n-Mice)**, originally created by **Seblor** as a Discord bot.
