@@ -44,11 +44,10 @@ public class HologramClickListener implements Listener {
                         long clickDelay = configManager.getLong("settings.click-delay") * 1000L;
                         if (currentTime - lastClickTime < clickDelay) {
                             long timeLeft = (clickDelay - (currentTime - lastClickTime)) / 1000;
-                            player.sendMessage(String.valueOf(timeLeft));
                             if (timeLeft > 0) {
                                 player.sendMessage(configManager.getColoredReplaced("messages.errors.click-cooldown", new String[]{"time"}, new String[]{String.valueOf(timeLeft)}));
                             } else {
-                                player.sendMessage("soucis"); // todo: à tester, ce message apparait vraiment?
+                                gameManager.addScore(player);
                             }
                         } else {
                             gameManager.addScore(player);

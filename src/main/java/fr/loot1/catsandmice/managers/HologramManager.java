@@ -10,10 +10,14 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class HologramManager {
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
 
     private final CatsAndMice main;
     private final ConfigManager configManager;
@@ -36,7 +40,7 @@ public class HologramManager {
             this.hologram = hologramExist;
         } else {
             Location location = dataFileManager.getLocation("hologram-location");
-            if(location != null && location.getWorld() != null) {
+            if (location != null && location.getWorld() != null) {
                 create(location, lastClicks);
             }
         }
@@ -58,6 +62,7 @@ public class HologramManager {
         Hologram existingHologram = DHAPI.getHologram(hologramName);
         if (existingHologram != null) {
             DHAPI.moveHologram(existingHologram, adjustedLocation);
+            this.hologram = existingHologram;
         } else {
             List<String> lines = generateLines(lastClicks);
             this.hologram = DHAPI.createHologram(hologramName, adjustedLocation, true, lines);
@@ -67,14 +72,25 @@ public class HologramManager {
     }
 
     public void update(List<Click> lastClicks) {
-        if(this.hologram == null) {
+        if (this.hologram == null) {
             this.hologram = DHAPI.getHologram(configManager.get("settings.hologram-name"));
+            if (this.hologram == null) return;
         }
-        Location loc = this.hologram.getLocation();
-        String hologramName = this.hologram.getName();
-        List<String> lines = generateLines(lastClicks);
-        DHAPI.removeHologram(hologramName);
-        this.hologram = DHAPI.createHologram(hologramName, loc, lines);
+
+        List<String> newLines = generateLines(lastClicks);
+        int currentLineCount = this.hologram.getPage(0).getLines().size();
+
+        if (currentLineCount == newLines.size()) {
+            for (int i = 0; i < newLines.size(); i++) {
+                DHAPI.setHologramLine(this.hologram, i, newLines.get(i));
+            }
+        } else {
+            Location loc = this.hologram.getLocation();
+            if (loc == null) return;
+            String hologramName = this.hologram.getName();
+            DHAPI.removeHologram(hologramName);
+            this.hologram = DHAPI.createHologram(hologramName, loc, newLines);
+        }
     }
 
     private List<String> generateLines(List<Click> lastClicks) {
@@ -85,10 +101,10 @@ public class HologramManager {
         List<String> topDescription = configManager.getColoredList("messages.hologram.top-description");
         List<String> subDescription = configManager.getColoredList("messages.hologram.sub-description");
 
-        if(!title.isEmpty()) {
+        if (!title.isEmpty()) {
             lines.add(title);
         }
-        if(!topDescription.isEmpty()) {
+        if (!topDescription.isEmpty()) {
             lines.addAll(topDescription);
         }
 
@@ -97,7 +113,6 @@ public class HologramManager {
         if (mockNames.isEmpty() && configManager.getBoolean("settings.enable-mock-names")) {
             mockNames = generateMockNames(lastClicksToShow);
             dataFileManager.set("mock-names", mockNames);
-            main.saveConfig();
         }
 
         // Afficher l'historique des clics réels
@@ -105,10 +120,7 @@ public class HologramManager {
         int fakeEntriesNeeded = Math.max(0, lastClicksToShow - realEntries);
 
         // Afficher les derniers clics (du plus ancien au plus récent)
-        // todo: just loop on the list ?
-        int startIndex = Math.max(0, lastClicks.size() - lastClicksToShow);
-        for (int i = startIndex; i < lastClicks.size(); i++) {
-            Click clickToDisplay = lastClicks.get(i);
+        for (Click clickToDisplay : lastClicks) {
             UUID playerId = clickToDisplay.getUUID();
             long clickTime = clickToDisplay.getDate();
             int score = clickToDisplay.getScore();
@@ -128,7 +140,7 @@ public class HologramManager {
                 }
             }
 
-            String timeStr = new SimpleDateFormat("HH:mm").format(new Date(clickTime));
+            String timeStr = TIME_FORMATTER.format(Instant.ofEpochMilli(clickTime));
 
             lines.add(configManager.getColoredReplaced(
                     isReset ? "messages.hologram.reset" : "messages.hologram.click",
@@ -138,15 +150,15 @@ public class HologramManager {
 
         if (fakeEntriesNeeded > 0) {
             for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
-                String timeStr = new SimpleDateFormat("HH:mm").format(new Date(System.currentTimeMillis() - (fakeEntriesNeeded - i) * 60000L));
+                String timeStr = TIME_FORMATTER.format(Instant.ofEpochMilli(System.currentTimeMillis() - (long)(fakeEntriesNeeded - i) * 60000L));
                 lines.add(configManager.getColoredReplaced("messages.hologram.click",
                         new String[]{"time", "player", "score"},
-                        new String[]{timeStr, mockNames.get(i), String.valueOf(fakeEntriesNeeded - i)})
-                );
+                        new String[]{timeStr, mockNames.get(i), String.valueOf(fakeEntriesNeeded - i)}
+                ));
             }
         }
 
-        if(!subDescription.isEmpty()) {
+        if (!subDescription.isEmpty()) {
             lines.addAll(subDescription);
         }
         lines.add(configManager.getColored("messages.hologram.click-button"));
@@ -164,7 +176,7 @@ public class HologramManager {
         for (int i = 1; i <= count && i <= 100; i++) { // Limite à 100 pour éviter les boucles infinies
             String color = colors[random.nextInt(colors.length)];
             String prefix = prefixes[random.nextInt(prefixes.length)];
-            String suffix = random.nextBoolean() ? "" : String.valueOf((char)('A' + random.nextInt(26)));
+            String suffix = random.nextBoolean() ? "" : String.valueOf((char) ('A' + random.nextInt(26)));
 
             String name = "&" + color + prefix + i + suffix;
 

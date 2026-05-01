@@ -33,7 +33,7 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
         @ChildPermission(name ="catsandmice.cat"),
         @ChildPermission(name ="catsandmice.create"),
         @ChildPermission(name ="catsandmice.help"),
-        @ChildPermission(name ="catsandmice.mouse"),
+        @ChildPermission(name ="catsandmice.mice"),
         @ChildPermission(name ="catsandmice.reload"),
 })
 @Permission(name = "catsandmice.bypass", desc = "Permet de contourner le délai entre les clics", defaultValue = PermissionDefault.OP)
@@ -59,7 +59,7 @@ public class CatsAndMice extends JavaPlugin {
         }
 
         hologramManager = new HologramManager(this);
-        gameManager = new GameManager(this);
+        gameManager = new GameManager(this, hologramManager);
 
         getCommand("mice").setExecutor(new CatsAndMiceCommand(this));
         getServer().getPluginManager().registerEvents(new HologramClickListener(this), this);

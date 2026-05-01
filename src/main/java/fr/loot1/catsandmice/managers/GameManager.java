@@ -20,11 +20,11 @@ public class GameManager {
     private Click lastClick;
     private Click lastBestClick;
 
-    public GameManager(CatsAndMice catsAndMice) {
+    public GameManager(CatsAndMice catsAndMice, HologramManager hologramManager) {
         this.main = catsAndMice;
         this.configManager = catsAndMice.getConfigManager();
         this.dataFileManager = catsAndMice.getDataFileManager();
-        this.hologramManager = new HologramManager(catsAndMice);
+        this.hologramManager = hologramManager;
 
         this.clicks = dataFileManager.getClicks("clicks");
         this.lastClick = clicks.stream()
@@ -87,54 +87,44 @@ public class GameManager {
 
             String baseMessage = configManager.getColoredReplaced("webhook.alert-message", placeholders, values);
 
-            final String message;
             String mention = configManager.get("webhook.mention");
-            if (!mention.isEmpty()) {
-                if (!mention.trim().isEmpty()) {
-                    message = mention + "\n" + baseMessage;
-                } else {
-                    message = baseMessage;
-                }
-            } else {
-                message = baseMessage;
-            }
+            final String message = (mention != null && !mention.trim().isEmpty())
+                    ? mention + "\n" + baseMessage
+                    : baseMessage;
 
-            if (configManager.getBoolean("webhook.enabled")) {
-                main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
-                    try {
-                        DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
-                        webhook.setContent(message);
-                        webhook.execute();
-                    } catch (IOException e) {
-                        main.getLogger().warning("Erreur lors de l'envoi du webhook: " + e.getMessage());
-                    }
-                });
-            }
+            main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+                try {
+                    DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
+                    webhook.setContent(message);
+                    webhook.execute();
+                } catch (IOException e) {
+                    main.getLogger().warning("Erreur lors de l'envoi du webhook: " + e.getMessage());
+                }
+            });
         }
     }
 
     public void resetScore(Player player) {
-        // todo: Ajouter un message de réinitialisation comme un clic spécial à la fin de la liste
-        // todo: faire en sorte que le click ne se détecte pas sur l'hologramme mais bien sur le bouton
-
         long currentTime = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
         String oldClickScore = lastClick != null ? String.valueOf(lastClick.getScore()) : "inconnu";
+
+        int previousScore = lastClick != null ? lastClick.getScore() : 0;
+        int bestClickCount = lastBestClick != null ? lastBestClick.getScore() : 0;
+        if (previousScore > bestClickCount) {
+            lastBestClick = lastClick;
+            if (configManager.getBoolean("settings.notify-new-best-score")) {
+                main.getServer().broadcastMessage(configManager.getColoredReplaced(
+                        "messages.success.new-best-score",
+                        new String[]{"score", "player"}, new String[]{String.valueOf(previousScore), player.getName()})
+                );
+            }
+        }
+
         Click newClick = new Click(playerId, currentTime, 0);
         clicks.add(newClick);
         lastClick = newClick;
         dataFileManager.updateClicks("clicks", clicks);
-
-        int bestClickCount = lastBestClick != null ? lastBestClick.getScore() : 0;
-        if (newClick.getScore() > bestClickCount) {
-            lastBestClick = newClick;
-            if (configManager.getBoolean("settings.notify-new-best-score")) {
-                main.getServer().broadcastMessage(configManager.getColoredReplaced(
-                        "messages.success.new-best-score",
-                        new String[]{"score", "player"}, new String[]{String.valueOf(bestClickCount), player.getName()})
-                );
-            }
-        }
 
         hologramManager.update(getLastClicks());
 

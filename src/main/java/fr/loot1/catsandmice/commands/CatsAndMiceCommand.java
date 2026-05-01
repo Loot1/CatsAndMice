@@ -83,7 +83,7 @@ public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
         return true;
     }
 
-    private final List<String> SUBCOMMANDS = List.of("create", "reload");
+    private final List<String> SUBCOMMANDS = List.of("create", "help", "reload");
     private final List<String> BLANK = Collections.emptyList();
 
     @Override

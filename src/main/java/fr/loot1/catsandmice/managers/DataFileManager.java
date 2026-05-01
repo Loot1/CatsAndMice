@@ -37,11 +37,13 @@ public class DataFileManager {
     }
 
     private void save() {
-        try {
-            config.save(configFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+            try {
+                config.save(configFile);
+            } catch (IOException e) {
+                main.getLogger().severe("Erreur lors de la sauvegarde de " + name + " : " + e.getMessage());
+            }
+        });
     }
 
     public void reload() {
@@ -49,7 +51,7 @@ public class DataFileManager {
         try {
             config.load(configFile);
         } catch (IOException | InvalidConfigurationException e) {
-            e.printStackTrace();
+            main.getLogger().severe("Erreur lors du chargement de " + name + " : " + e.getMessage());
         }
     }
 
@@ -87,8 +89,8 @@ public class DataFileManager {
                     .toList();
             return new ArrayList<>(clicks);
         }
-        main.getLogger().severe("This value doesn't exist in configuration file: " + path);
-        return null;
+        main.getLogger().severe("This value doesn't exist in data file: " + path);
+        return new ArrayList<>();
     }
 
     public void updateClicks(String path, List<Click> clicks) {
