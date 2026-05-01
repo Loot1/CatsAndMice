@@ -1,146 +1,183 @@
-# CatsAndMice - Plugin Minecraft
+# CatsAndMice - Minecraft Plugin
 
-Un plugin interactif pour les serveurs Minecraft qui permet aux joueurs de participer à un jeu de clics compétitif avec affichage des scores en temps réel via un hologramme. Parfait pour les événements communautaires et les animations de serveur.
+An interactive plugin for Minecraft servers that lets players participate in a competitive click game with real-time score display via a clickable hologram. Perfect for community events and server animations.
 
-## 📋 Fonctionnalités
+## 📋 Features
 
-### 🎮 Système de jeu
-- Système de score interactif avec hologramme cliquable
-- Affichage des 10 derniers clics (réels ou factices)
-- Délai configurable entre chaque clic (5 minutes par défaut)
-- Meilleur score enregistré avec le nom du joueur
-- Interface visuelle attrayante avec codes couleurs
+### 🎮 Game System
+- Interactive score system with a clickable hologram
+- Displays the last N clicks (real or fake players to fill empty slots)
+- Configurable delay between each click (5 minutes by default)
+- Best score recorded with the player's name, date and time
+- Attractive visual interface with color codes
 
-### 🔧 Fonctionnalités avancées
-- Gestion complète des permissions
-- Sauvegarde automatique des données
-- Support des préfixes personnalisés (LuckPerms)
-- Système de logs détaillés pour le débogage
-- Personnalisation complète des messages
+### 🔧 Advanced Features
+- Full permission management
+- Automatic data saving (async + sync on shutdown)
+- LuckPerms prefix support (soft dependency)
+- Configurable time format for hologram messages
+- "Recent on bottom" or "recent on top" display order
+- Mock (fake) player names to always fill the hologram
+- Fully customizable messages
 
-### 🤖 Intégration Discord
-- Notifications via webhook pour les scores élevés
-- Messages personnalisables avec mentions
-- Seuil de score configurable
-- Support des rôles et mentions
+### 🤖 Discord Integration
+- Webhook notifications for high scores
+- Customizable alert messages with placeholders
+- Configurable score threshold
+- Optional role/user mentions
+- Console alert logging
 
 ## 🚀 Installation
 
-### Prérequis
-- Serveur Minecraft Spigot/Paper 1.20.6 (ou version supérieure)
-- Java 22
-- DecentHolograms 2.9.5
+### Requirements
+- Spigot/Paper Minecraft server 1.20.6 or higher
+- Java 17 or higher
+- [DecentHolograms 2.9.5+](https://www.spigotmc.org/resources/96927/) (**required**)
+- [LuckPerms](https://luckperms.net/) (optional, for rank prefix display)
 
-### Étapes d'installation
-1. Téléchargez la dernière version du plugin
-2. Placez le fichier JAR dans le dossier `plugins`
-3. Démarrez/Redémarrez votre serveur
-4. Utilisez la commande `/mice create` pour créer l'hologramme
-5. Configurez le plugin via `plugins/CatsAndMice/config.yml`
+### Steps
+1. Download the latest plugin JAR
+2. Place the JAR file in the `plugins` folder
+3. Start/Restart your server
+4. Use `/mice create` to create the hologram at your location
+5. Configure the plugin via `plugins/CatsAndMice/config.yml`
 
 ## ⚙️ Configuration
 
-### Fichiers principaux
-- `plugins/CatsAndMice/config.yml` - Configuration générale
-- `plugins/CatsAndMice/data.yml` - Sauvegarde des données
+### Main Files
+- `plugins/CatsAndMice/config.yml` — General configuration (messages, settings, webhook)
+- `plugins/CatsAndMice/data.yml` — Persistent data (clicks history, hologram location)
 
-### Commandes
-| Commande | Permission | Description |
-|----------|------------|-------------|
-| `/mice create` | `catsandmice.command` | Crée un nouvel hologramme |
-| `/mice reload` | `catsandmice.command` | Recharge la configuration |
+### Commands
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/mice create` | `catsandmice.create` | Creates a new game hologram at your location |
+| `/mice reload` | `catsandmice.reload` | Reloads the configuration |
+| `/mice help` | `catsandmice.help` | Displays the help message |
 
 ### Permissions
-| Permission | Description |
-|------------|-------------|
-| `catsandmice.command` | Accès aux commandes du plugin |
-| `catsandmice.bypass` | Contourne le délai entre les clics que pour les joueurs |
-| `catsandmice.reset` | Permet de réinitialiser le score |
-| `catsandmice.*` | Donne accès à toutes les fonctionnalités |
+| Permission | Description | Default |
+|------------|-------------|---------|
+| `catsandmice.*` | Grants all plugin permissions | OP |
+| `catsandmice.mice` | Allows playing the game (clicking the hologram) | OP |
+| `catsandmice.cat` | Allows resetting the score by clicking the hologram | OP |
+| `catsandmice.bypass` | Bypasses the click cooldown delay | OP |
+| `catsandmice.create` | Allows creating the game hologram | OP |
+| `catsandmice.reload` | Allows reloading the plugin configuration | OP |
+| `catsandmice.help` | Allows viewing the help menu | OP |
 
-## 🎨 Personnalisation
+## 🎨 Customization
 
-### Hologramme
-- Titre personnalisable via `hologram.display.title`
-- Format des messages de clic/réinitialisation personnalisable
-- Affichage des 10 derniers clics
-- Gestion des faux joueurs pour maintenir l'affichage
+### Hologram
+- Customizable title via `messages.hologram.title`
+- Top and bottom description blocks with best-score placeholders
+- Configurable number of displayed click lines (`settings.last-clicks`)
+- Click and reset line formats with placeholders
+- Mock (fake) player names automatically generated to fill empty slots
+- Option to display the most recent entry at the bottom or top
 
-### Messages
-Tous les messages sont personnalisables dans le fichier de configuration, notamment :
-- Messages de score
-- Messages d'erreur
-- Messages de notification
-- Messages de réinitialisation
+### Message Placeholders
+| Placeholder | Description |
+|-------------|-------------|
+| `%player%` | Player name |
+| `%score%` | Score value |
+| `%prefix%` | LuckPerms prefix |
+| `%time%` | Time of the click (format from `settings.time-format`) |
+| `%day%` | Date of the click (dd/MM/yyyy) |
 
-## 📊 Optimisation
+## 📊 Settings Reference
 
-### Paramètres recommandés
-- **Hologramme** :
-  - Désactivez les mises à jour inutiles
-  - Limitez le nombre de lignes affichées
-  - Utilisez des messages courts
+```yaml
+settings:
+  hologram-name: 'catsandmice_hologram'  # Hologram internal name
+  last-clicks: 10                         # Number of click lines to display
+  click-delay: 300                        # Cooldown between clicks (seconds)
+  time-format: 'HH:mm'                   # Time format (e.g. HH:mm:ss)
+  enable-mock-names: true                 # Fill empty slots with fake names
+  notify-new-best-score: true             # Broadcast new best score to all players
+  recent-on-bottom: true                  # Show most recent click at the bottom
+```
 
-- **Performances** :
-  - Désactivez les logs en production
-  - Augmentez le délai entre les clics si nécessaire
-  - Utilisez un serveur dédié pour les webhooks
+## 🔗 Discord Webhook Setup
 
-### Configuration des webhooks
-1. Créez un webhook dans les paramètres de votre salon Discord
-2. Activez les webhooks dans la configuration
-3. Configurez le seuil de notification
-4. Personnalisez le message d'alerte
+1. Create a webhook in your Discord channel settings
+2. Enable webhooks in the config: `webhook.enabled: true`
+3. Paste your webhook URL: `webhook.url: 'https://discord.com/api/webhooks/...'`
+4. Set the score threshold for alerts: `webhook.threshold: 100`
+5. Optionally enable mentions: `webhook.mention: '@everyone'`
 
-## 📅 Version
-**Dernière version** : 1.0.3  
-**Dernière mise à jour** : 14/07/2025
-
-### Notes de version
-- **1.0.3** : 
-  - Changement de la commande principale de `/catsandmice` à `/mice`
-  - Amélioration du positionnement automatique de l'hologramme
-  - Correction de bugs mineurs
-  - Mise à jour de la documentation
-   - Activez les webhooks : `webhook.enabled: true`
-   - Collez votre URL de webhook : `webhook.url: 'https://discord.com/api/webhooks/...'`
-   - Définissez le seuil de score pour les alertes : `webhook.threshold: 100`
-   - Activez les mentions si nécessaire : `webhook.mention-enabled: true`
-   - Définissez la mention : `webhook.mention: '@everyone'`
-
-### Exemple de configuration complète
+### Full Webhook Configuration Example
 
 ```yaml
 webhook:
   enabled: true
-  url: 'https://discord.com/api/webhooks/votre_url_ici'
+  url: 'https://discord.com/api/webhooks/your_webhook_here'
   threshold: 100
-  mention-enabled: true
   mention: '@everyone'
+  console-message: true
   alert-message: |-
     **🎮 CATS AND MICE - 1-2-3-Modo**
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    ⏰***Alerte score élevé***
+    ⏰***High score alert***
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    🏆 **Joueur:** %player%
-    ⚡ **Score atteint:** %score%
+    🏆 **Player:** %player%
+    ⚡ **Score reached:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  console-alert: '&6[CatsAndMice] &aScore alert: %player% has reached %score% points'
 ```
 
-### Variables disponibles dans les messages
+## 🗂️ Project Structure
 
-- `%player%` : Nom du joueur
-- `%score%` : Score atteint
-- `%date%` : Date et heure actuelles (format configuré dans `settings.time-format`)
-- `%best-score%` : Meilleur score actuel
-- `%best-player%` : Nom du meilleur joueur
+```
+src/main/java/fr/loot1/catsandmice/
+├── CatsAndMice.java              # Main plugin class
+├── Click.java                    # Click data model
+├── commands/
+│   └── CatsAndMiceCommand.java   # /mice command handler
+├── listeners/
+│   └── HologramClickListener.java # Hologram click event listener
+├── managers/
+│   ├── ConfigManager.java        # Config file manager
+│   ├── DataFileManager.java      # Data file manager (async I/O)
+│   ├── GameManager.java          # Game logic (scores, resets, webhook)
+│   └── HologramManager.java      # Hologram creation and update logic
+└── utils/
+    ├── DiscordWebhook.java        # Discord webhook HTTP client
+    └── RanksHelper.java           # LuckPerms prefix helper
+```
 
-## Dépendances
+## 📅 Version
 
-- [DecentHolograms](https://www.spigotmc.org/resources/96927/) (obligatoire)
-- Spigot/Paper 1.20.6 ou supérieur
-- Java 17 ou supérieur
+**Latest version**: 1.0.4
+**Last updated**: 01/05/2026
 
-## Auteur
+### Changelog
+- **1.0.4**:
+  - Added `recent-on-bottom` setting for hologram display order
+  - Added day formatter (`dd/MM/yyyy`) on best score display
+  - Added mock name generation with unique color codes
+  - Improved hologram height auto-adjustment on creation
+  - Code cleanup and full English translation
+- **1.0.3**:
+  - Changed main command from `/catsandmice` to `/mice`
+  - Improved automatic hologram positioning
+  - Minor bug fixes
 
-Développé par Eniox59
+## Dependencies
+
+| Dependency | Type | Link |
+|------------|------|------|
+| DecentHolograms | Required | [SpigotMC](https://www.spigotmc.org/resources/96927/) |
+| LuckPerms | Optional | [luckperms.net](https://luckperms.net/) |
+| Spigot/Paper 1.20.6+ | Server | — |
+| Java 17+ | Runtime | — |
+
+## Authors
+
+| Role | Author |
+|------|--------|
+| Original idea & initial Discord bot | [**Seblor**](https://github.com/Seblor/Cats-n-Mice) |
+| First Minecraft plugin version | **Eniox59** |
+| Plugin completion & final work | **Loot1** |
+
+> ⚠️ This plugin is a Minecraft adaptation of **[Cats-n-Mice](https://github.com/Seblor/Cats-n-Mice)**, originally created by **Seblor** as a Discord bot.
