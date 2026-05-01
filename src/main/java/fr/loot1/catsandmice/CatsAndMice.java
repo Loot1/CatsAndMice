@@ -37,9 +37,9 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
         @ChildPermission(name ="catsandmice.mice"),
         @ChildPermission(name ="catsandmice.reload"),
 })
-@Permission(name = "catsandmice.bypass", desc = "Permet de contourner le délai entre les clics", defaultValue = PermissionDefault.OP)
-@Permission(name = "catsandmice.cat", desc = "Permet de réinitialiser le score en cliquant sur l'hologramme", defaultValue = PermissionDefault.OP)
-@Permission(name = "catsandmice.mice", desc = "Permet de jouer au jeu en cliquant sur l'hologramme", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.bypass", desc = "Allows bypassing the click cooldown delay", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.cat", desc = "Allows resetting the score by clicking the hologram", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.mice", desc = "Allows playing the game by clicking the hologram", defaultValue = PermissionDefault.OP)
 
 public class CatsAndMice extends JavaPlugin {
 
@@ -72,7 +72,7 @@ public class CatsAndMice extends JavaPlugin {
     public void onDisable() {
         if (dataFileManager != null) {
             dataFileManager.saveSync();
-            getLogger().info("Données sauvegardées.");
+            getLogger().info("Data saved.");
         }
     }
 

@@ -43,7 +43,7 @@ public class DataFileManager {
                 try {
                     config.save(configFile);
                 } catch (IOException e) {
-                    main.getLogger().severe("Erreur lors de la sauvegarde de " + name + " : " + e.getMessage());
+                    main.getLogger().severe("Error while saving " + name + ": " + e.getMessage());
                 }
             }
         });
@@ -54,7 +54,7 @@ public class DataFileManager {
             try {
                 config.save(configFile);
             } catch (IOException e) {
-                main.getLogger().severe("Erreur lors de la sauvegarde finale de " + name + " : " + e.getMessage());
+                main.getLogger().severe("Error during final save of " + name + ": " + e.getMessage());
             }
         }
     }
@@ -65,7 +65,7 @@ public class DataFileManager {
             try {
                 config.load(configFile);
             } catch (IOException | InvalidConfigurationException e) {
-                main.getLogger().severe("Erreur lors du chargement de " + name + " : " + e.getMessage());
+                main.getLogger().severe("Error while loading " + name + ": " + e.getMessage());
             }
         }
     }

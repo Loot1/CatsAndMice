@@ -108,7 +108,7 @@ public class GameManager {
                     webhook.setContent(message);
                     webhook.execute();
                 } catch (IOException e) {
-                    main.getLogger().warning("Erreur lors de l'envoi du webhook: " + e.getMessage());
+                    main.getLogger().warning("Error while sending webhook: " + e.getMessage());
                 }
             });
         }
@@ -117,7 +117,7 @@ public class GameManager {
     public void resetScore(Player player) {
         long currentTime = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
-        String oldClickScore = lastClick != null ? String.valueOf(lastClick.getScore()) : "inconnu";
+        String oldClickScore = lastClick != null ? String.valueOf(lastClick.getScore()) : "unknown";
 
         int previousScore = lastClick != null ? lastClick.getScore() : 0;
         int bestClickCount = lastBestClick != null ? lastBestClick.getScore() : 0;

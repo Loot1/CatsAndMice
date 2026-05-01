@@ -70,7 +70,7 @@ public class HologramManager {
     public void create(Location location, List<Click> lastClicks, Click bestClick) {
         String hologramName = configManager.get("settings.hologram-name");
 
-        // Générer les lignes en premier pour calculer la hauteur précisément
+        // Generate lines first to precisely calculate the height offset
         List<String> lines = generateLines(lastClicks, bestClick);
         double heightOffset = (lines.size() * 0.33) + 0.5;
         Location adjustedLocation = location.clone();
@@ -113,8 +113,8 @@ public class HologramManager {
     private List<String> generateLines(List<Click> lastClicks, Click bestClick) {
         List<String> lines = new ArrayList<>();
 
-        String bestScoreStr = bestClick != null ? String.valueOf(bestClick.getScore()) : "Aucun";
-        String bestPlayerName = bestClick != null ? getPlayerName(bestClick.getUUID()) : "Aucun";
+        String bestScoreStr = bestClick != null ? String.valueOf(bestClick.getScore()) : "None";
+        String bestPlayerName = bestClick != null ? getPlayerName(bestClick.getUUID()) : "None";
         String bestPrefix = bestClick != null ? getPlayerPrefix(bestClick.getUUID()) : "";
         String bestTimeStr = bestClick != null ? timeFormatter.format(Instant.ofEpochMilli(bestClick.getDate())) : "";
         String bestDayStr = bestClick != null ? dayFormatter.format(Instant.ofEpochMilli(bestClick.getDate())) : "";
@@ -126,21 +126,21 @@ public class HologramManager {
         List<String> topDescription = configManager.getColoredListReplaced("messages.hologram.top-description", bestPlaceholders, bestValues);
         List<String> subDescription = configManager.getColoredListReplaced("messages.hologram.sub-description", bestPlaceholders, bestValues);
 
-        // Titre
+        // Title
         if (!title.isEmpty()) {
             lines.add(title);
         }
 
-        // Description haute (peut contenir les placeholders du meilleur score)
+        // Top description (may contain best score placeholders)
         if (!topDescription.isEmpty()) {
             lines.addAll(topDescription);
         }
 
-        // Calcul des entrées réelles et fausses
+        // Calculate real and fake entries
         int realEntries = lastClicks.size();
         int fakeEntriesNeeded = Math.max(0, lastClicksToShow - realEntries);
 
-        // Générer les faux joueurs si nécessaire
+        // Generate fake players if needed
         List<String> mockNames = dataFileManager.getStringList("mock-names");
         if (mockNames.isEmpty() && configManager.getBoolean("settings.enable-mock-names")) {
             mockNames = generateMockNames(lastClicksToShow);
@@ -158,18 +158,18 @@ public class HologramManager {
                     ));
                 }
             }
-            // Clics réels du plus ancien au plus récent
+            // Real clicks from oldest to most recent
             List<Click> ascendingClicks = new ArrayList<>(lastClicks);
             Collections.reverse(ascendingClicks);
             for (Click clickToDisplay : ascendingClicks) {
                 lines.add(buildClickLine(clickToDisplay));
             }
         } else {
-            // Clics réels du plus récent au plus ancien
+            // Real clicks from most recent to oldest
             for (Click clickToDisplay : lastClicks) {
                 lines.add(buildClickLine(clickToDisplay));
             }
-            // Faux joueurs ensuite
+            // Fake players after
             if (fakeEntriesNeeded > 0) {
                 for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
                     String timeStr = timeFormatter.format(Instant.ofEpochMilli(
@@ -182,7 +182,7 @@ public class HologramManager {
             }
         }
 
-        // Description basse
+        // Bottom description
         if (!subDescription.isEmpty()) {
             lines.addAll(subDescription);
         }
@@ -206,7 +206,7 @@ public class HologramManager {
         if (offlinePlayer.hasPlayedBefore() && offlinePlayer.getName() != null) {
             return offlinePlayer.getName();
         }
-        return "Joueur inconnu";
+        return "Unknown player";
     }
 
     private String getPlayerPrefix(UUID uuid) {
@@ -218,7 +218,7 @@ public class HologramManager {
     private List<String> generateMockNames(int count) {
         List<String> names = new ArrayList<>();
         String[] colors = {"a", "b", "c", "d", "e", "f", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-        String[] prefixes = {"Joueur", "Player", "Joueur_"};
+        String[] prefixes = {"Player", "User", "Player_"};
 
         Random random = new Random();
         Set<String> usedNames = new HashSet<>();

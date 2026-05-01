@@ -24,9 +24,9 @@ import java.util.List;
         desc = "Manage the CatsAndMice plugin",
         aliases = {"mice"}
 ))
-@Permission(name = "catsandmice.create", desc = "Permet de générer un hologramme de jeu", defaultValue = PermissionDefault.OP)
-@Permission(name = "catsandmice.help", desc = "Affiche l'aide du plugin", defaultValue = PermissionDefault.OP)
-@Permission(name = "catsandmice.reload", desc = "Permet de recharger la configuration du plugin", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.create", desc = "Allows creating a game hologram", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.help", desc = "Displays the plugin help", defaultValue = PermissionDefault.OP)
+@Permission(name = "catsandmice.reload", desc = "Allows reloading the plugin configuration", defaultValue = PermissionDefault.OP)
 
 public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
 

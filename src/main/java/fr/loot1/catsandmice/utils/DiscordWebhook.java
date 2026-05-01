@@ -21,11 +21,11 @@ public class DiscordWebhook {
 
     public void execute() throws IOException {
         if (content == null || content.isEmpty()) {
-            throw new IllegalArgumentException("Le contenu du message ne peut pas être vide");
+            throw new IllegalArgumentException("Message content cannot be empty");
         }
 
-        // Création du JSON de la requête
-        String jsonPayload = String.format("{\"content\":\"%s\"}", 
+        // Build the JSON payload for the request
+        String jsonPayload = String.format("{\"content\":\"%s\"}",
             content.replace("\\", "\\\\")
                   .replace("\"", "\\\"")
                   .replace("\n", "\\n")
@@ -45,7 +45,7 @@ public class DiscordWebhook {
 
         int responseCode = connection.getResponseCode();
         if (responseCode < 200 || responseCode > 299) {
-            throw new IOException("Erreur lors de l'envoi du webhook: " + 
+            throw new IOException("Error while sending webhook: " +
                 connection.getResponseMessage() + " (HTTP " + responseCode + ")");
         }
     }
