@@ -26,6 +26,13 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.spigotmc</groupId>
+                            <artifactId>plugin-annotations</artifactId>
+                            <version>1.2.3-SNAPSHOT</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
