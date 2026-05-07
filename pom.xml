@@ -36,7 +36,7 @@
                     <relocations>
                         <relocation>
                             <pattern>org.bstats</pattern>
-                            <shadedPattern>fr.loot1</shadedPattern>
+                            <shadedPattern>fr.loot1.bstats</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
