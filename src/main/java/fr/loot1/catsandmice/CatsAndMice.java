@@ -7,6 +7,7 @@ import fr.loot1.catsandmice.managers.ConfigManager;
 import fr.loot1.catsandmice.managers.GameManager;
 import fr.loot1.catsandmice.managers.HologramManager;
 import fr.loot1.catsandmice.utils.RanksHelper;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,7 +21,7 @@ import org.bukkit.plugin.java.annotation.plugin.LogPrefix;
 import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
 
-@Plugin(name = "CatsAndMice", version = "1.0.4")
+@Plugin(name = "CatsAndMice", version = "1.0.5")
 @Description("Le chat et la souris avec des modos !")
 @Author("Loot1")
 @Author("Eniox59")
@@ -59,6 +60,9 @@ public class CatsAndMice extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        int pluginId = 31184;
+        Metrics metrics = new Metrics(this, pluginId);
 
         ranksHelper = new RanksHelper();
         hologramManager = new HologramManager(this, ranksHelper);
