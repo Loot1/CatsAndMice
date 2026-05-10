@@ -5,7 +5,6 @@ import eu.decentsoftware.holograms.api.holograms.Hologram;
 import fr.loot1.catsandmice.CatsAndMice;
 import fr.loot1.catsandmice.Click;
 import fr.loot1.catsandmice.utils.RanksHelper;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -148,16 +147,7 @@ public class HologramManager {
         }
 
         if (recentOnBottom) {
-            if (fakeEntriesNeeded > 0) {
-                for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
-                    String timeStr = timeFormatter.format(Instant.ofEpochMilli(
-                            System.currentTimeMillis() - (long) (fakeEntriesNeeded - i) * 60000L));
-                    lines.add(configManager.getColoredReplaced("messages.hologram.click",
-                            new String[]{"time", "player", "prefix", "score"},
-                            new String[]{timeStr, mockNames.get(i), "", String.valueOf(fakeEntriesNeeded - i)}
-                    ));
-                }
-            }
+            addFakeEntryLines(lines, mockNames, fakeEntriesNeeded);
             // Real clicks from oldest to most recent
             List<Click> ascendingClicks = new ArrayList<>(lastClicks);
             Collections.reverse(ascendingClicks);
@@ -169,17 +159,7 @@ public class HologramManager {
             for (Click clickToDisplay : lastClicks) {
                 lines.add(buildClickLine(clickToDisplay));
             }
-            // Fake players after
-            if (fakeEntriesNeeded > 0) {
-                for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
-                    String timeStr = timeFormatter.format(Instant.ofEpochMilli(
-                            System.currentTimeMillis() - (long) (fakeEntriesNeeded - i) * 60000L));
-                    lines.add(configManager.getColoredReplaced("messages.hologram.click",
-                            new String[]{"time", "player", "prefix", "score"},
-                            new String[]{timeStr, mockNames.get(i), "", String.valueOf(fakeEntriesNeeded - i)}
-                    ));
-                }
-            }
+            addFakeEntryLines(lines, mockNames, fakeEntriesNeeded);
         }
 
         // Bottom description
@@ -188,6 +168,17 @@ public class HologramManager {
         }
         lines.add(configManager.getColored("messages.hologram.click-button"));
         return lines;
+    }
+
+    private void addFakeEntryLines(List<String> lines, List<String> mockNames, int fakeEntriesNeeded) {
+        for (int i = 0; i < fakeEntriesNeeded && i < mockNames.size(); i++) {
+            String timeStr = timeFormatter.format(Instant.ofEpochMilli(
+                    System.currentTimeMillis() - (long) (fakeEntriesNeeded - i) * 60000L));
+            lines.add(configManager.getColoredReplaced("messages.hologram.click",
+                    new String[]{"time", "player", "prefix", "score"},
+                    new String[]{timeStr, mockNames.get(i), "", String.valueOf(fakeEntriesNeeded - i)}
+            ));
+        }
     }
 
     private String buildClickLine(Click click) {
@@ -217,7 +208,7 @@ public class HologramManager {
 
     private List<String> generateMockNames(int count) {
         List<String> names = new ArrayList<>();
-        String[] colors = {"a", "b", "c", "d", "e", "f", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        String[] colors = {"red", "blue", "green", "yellow", "light_purple", "white", "gold", "aqua", "dark_red", "dark_blue", "dark_green", "dark_aqua", "dark_gray", "gray"};
         String[] prefixes = {"Player", "User", "Player_"};
 
         Random random = new Random();
@@ -229,10 +220,9 @@ public class HologramManager {
             String color = colors[random.nextInt(colors.length)];
             String prefix = prefixes[random.nextInt(prefixes.length)];
             String suffix = random.nextBoolean() ? "" : String.valueOf((char) ('A' + random.nextInt(26)));
-            String name = "&" + color + prefix + i + suffix;
-            String translated = ChatColor.translateAlternateColorCodes('&', name);
-            if (usedNames.add(translated)) {
-                names.add(translated);
+            String name = "<" + color + ">" + prefix + i + suffix + "</" + color + ">";
+            if (usedNames.add(name)) {
+                names.add(name);
             } else {
                 i--;
             }

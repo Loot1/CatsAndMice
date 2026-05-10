@@ -70,7 +70,7 @@ public class GameManager {
 
         hologramManager.update(getLastClicks(), lastBestClick);
         checkScoreAlert(player);
-        player.sendMessage(configManager.getColoredReplaced(
+        player.sendMessage(configManager.getComponentReplaced(
                 "messages.success.clicked",
                 new String[]{"score"}, new String[]{String.valueOf(newClickCount)})
         );
@@ -124,7 +124,7 @@ public class GameManager {
         if (previousScore > bestClickCount) {
             lastBestClick = lastClick;
             if (configManager.getBoolean("settings.notify-new-best-score")) {
-                main.getServer().broadcastMessage(configManager.getColoredReplaced(
+                main.getServer().broadcast(configManager.getComponentReplaced(
                         "messages.success.new-best-score",
                         new String[]{"score", "player"}, new String[]{String.valueOf(previousScore), player.getName()})
                 );
@@ -138,11 +138,10 @@ public class GameManager {
 
         hologramManager.update(getLastClicks(), lastBestClick);
 
-        player.sendMessage(configManager.getColoredReplaced(
+        player.sendMessage(configManager.getComponentReplaced(
                 "messages.success.score-reset",
                 new String[]{"score"}, new String[]{oldClickScore})
         );
     }
 
 }
-

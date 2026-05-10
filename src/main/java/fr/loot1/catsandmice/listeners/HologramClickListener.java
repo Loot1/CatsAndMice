@@ -29,7 +29,7 @@ public class HologramClickListener implements Listener {
                 if(lastClick == null || lastClick.getScore() != 0) {
                     gameManager.resetScore(player);
                 } else {
-                    player.sendMessage(configManager.getColored("messages.errors.already-reset"));
+                    player.sendMessage(configManager.getComponent("messages.errors.already-reset"));
                 }
             } else if(player.hasPermission("catsandmice.mice")) {
                 if (!player.hasPermission("catsandmice.bypass")) {
@@ -39,7 +39,7 @@ public class HologramClickListener implements Listener {
                         long clickDelay = configManager.getLong("settings.click-delay") * 1000L;
                         if (elapsed < clickDelay) {
                             long timeLeft = (clickDelay - elapsed) / 1000;
-                            player.sendMessage(configManager.getColoredReplaced(
+                            player.sendMessage(configManager.getComponentReplaced(
                                     "messages.errors.click-cooldown",
                                     new String[]{"time"}, new String[]{String.valueOf(timeLeft)}));
                             return;
@@ -48,7 +48,7 @@ public class HologramClickListener implements Listener {
                 }
                 gameManager.addScore(player);
             } else {
-                player.sendMessage(configManager.getColored("messages.errors.permission-denied"));
+                player.sendMessage(configManager.getComponent("messages.errors.permission-denied"));
             }
         }
     }

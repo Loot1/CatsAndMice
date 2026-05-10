@@ -1,40 +1,39 @@
-# Plugin messages
 messages:
   errors:
-    permission-denied: '&cYou do not have permission to do this.'
-    console-sender: '&cThis command cannot be used from the console.'
+    permission-denied: '<red>You do not have permission to do this.'
+    console-sender: '<red>This command cannot be used from the console.'
     # %time% : remaining seconds before next click
-    click-cooldown: '&cYou must wait %time% more seconds before clicking again!'
-    already-reset: '&cThe score has already been reset!'
+    click-cooldown: '<red>You must wait <bold>%time%</bold> more seconds before clicking again!'
+    already-reset: '<red>The score has already been reset!'
   help:
-    - '§6=== §eCatsAndMice Help §6==='
-    - '§6/mice create §f- Creates a new game hologram'
-    - '§6/mice reload §f- Reloads the configuration'
+    - '<gold>=== <yellow>CatsAndMice Help <gold>==='
+    - '<gold>/mice create <white>- Creates a new game hologram'
+    - '<gold>/mice reload <white>- Reloads the configuration'
   success:
-    hologram-created: '&7Hologram created.'
-    configuration-reload: '&7Configuration reloaded.'
+    hologram-created: '<gray>Hologram created.'
+    configuration-reload: '<gray>Configuration reloaded.'
     # %score% : new score value
-    clicked: '&7You increased the score to &b%score%&7!'
+    clicked: '<gray>You increased the score to <aqua>%score%<gray>!'
     # %score% : score value before reset
-    score-reset: '&7You reset the score, it was at &b%score%&7!'
+    score-reset: '<gray>You reset the score, it was at <aqua>%score%<gray>!'
     # %player% : player name | %score% : best score value
-    new-best-score: '&7New best score at &c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo&r&7 by &6%player%&7: &b%score%&7!'
+    new-best-score: '<gray>New best score at <bold><red>1<gray>-<yellow>2<gray>-<green>3<gray>-Modo</bold> by <gold>%player%<gray>: <aqua>%score%<gray>!'
   hologram:
-    title: '&c&l1&7&l-&e&l2&7&l-&a&l3&7&l-Modo'
+    title: '<bold><red>1<gray>-<yellow>2<gray>-<green>3<gray>-Modo</bold>'
     # %player% : best score player name | %score% : best score value
     # %prefix% : LuckPerms prefix | %time% : best score time | %day% : best score date (dd/MM/yyyy)
     top-description:
       - ''
-      - '&7Challenge the mods by increasing the score'
-      - '&7But be careful, if they come by, it''s all over!'
+      - '<gray>Challenge the mods by increasing the score'
+      - '<gray>But be careful, if they come by, it''s all over!'
       - ''
-      - '&7Best score by &6%player%&7 with &b%score%&7 on &d%day%&7 at &d%time% &7!'
+      - '<gray>Best score by <gold>%player%<gray> with <aqua>%score%<gray> on <light_purple>%day%<gray> at <light_purple>%time%<gray>!'
       - ''
     # %time% : click time | %player% : player name | %prefix% : LuckPerms prefix | %score% : score at click
-    click: '&d%time% &8| &6%player% &7reaches &b%score%&b!'
+    click: '<light_purple>%time% <dark_gray>| <gold>%player% <gray>reaches <aqua>%score%<gray>!'
     # %time% : reset time | %player% : player name | %prefix% : LuckPerms prefix
-    reset: '&d%time% &8| &b%prefix%%player%&7 has reset!'
-    click-button: '&a[+1]'
+    reset: '<light_purple>%time% <dark_gray>| <aqua>%prefix%%player%<gray> has reset!'
+    click-button: '<green>[+1]'
     # %player% : best score player name | %score% : best score value
     # %prefix% : LuckPerms prefix | %time% : best score time | %day% : best score date (dd/MM/yyyy)
     sub-description: []
@@ -68,4 +67,4 @@ webhook:
     ⚡ **Score reached:** %score%
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # %player% : player name | %score% : score that triggered the alert
-  console-alert: '&6[CatsAndMice] &aScore alert: %player% has reached %score% points'
+  console-alert: '<gold>[CatsAndMice] <green>Score alert: %player% has reached %score% points'

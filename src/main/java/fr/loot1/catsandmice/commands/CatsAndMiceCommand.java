@@ -48,12 +48,12 @@ public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
                     if (sender.hasPermission("catsandmice.create")) {
                         if(sender instanceof Player player) {
                             hologramManager.create(player.getLocation(), gameManager.getLastClicks(), gameManager.getLastBestClick());
-                            sender.sendMessage(configManager.getColored("messages.success.hologram-created"));
+                            sender.sendMessage(configManager.getComponent("messages.success.hologram-created"));
                         } else {
-                            sender.sendMessage(configManager.getColored("messages.errors.console-sender"));
+                            sender.sendMessage(configManager.getComponent("messages.errors.console-sender"));
                         }
                     } else {
-                        sender.sendMessage(configManager.getColored("messages.errors.permission-denied"));
+                        sender.sendMessage(configManager.getComponent("messages.errors.permission-denied"));
                     }
                     break;
                 case "reload":
@@ -62,24 +62,24 @@ public class CatsAndMiceCommand implements CommandExecutor, TabExecutor {
                         gameManager.refreshSettings();
                         hologramManager.refreshSettings();
                         hologramManager.update(gameManager.getLastClicks(), gameManager.getLastBestClick());
-                        sender.sendMessage(configManager.getColored("messages.success.configuration-reload"));
+                        sender.sendMessage(configManager.getComponent("messages.success.configuration-reload"));
                     } else {
-                        sender.sendMessage(configManager.getColored("messages.errors.permission-denied"));
+                        sender.sendMessage(configManager.getComponent("messages.errors.permission-denied"));
                     }
                     break;
                 default:
                     if (sender.hasPermission("catsandmice.help")) {
-                        configManager.getColoredList("messages.help").forEach(sender::sendMessage);
+                        configManager.getComponentList("messages.help").forEach(sender::sendMessage);
                     } else {
-                        sender.sendMessage(configManager.getColored("messages.errors.permission-denied"));
+                        sender.sendMessage(configManager.getComponent("messages.errors.permission-denied"));
                     }
                     break;
             }
         } else {
             if (sender.hasPermission("catsandmice.help")) {
-                configManager.getColoredList("messages.help").forEach(sender::sendMessage);
+                configManager.getComponentList("messages.help").forEach(sender::sendMessage);
             } else {
-                sender.sendMessage(configManager.getColored("messages.errors.permission-denied"));
+                sender.sendMessage(configManager.getComponent("messages.errors.permission-denied"));
             }
         }
         return true;
